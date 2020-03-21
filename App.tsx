@@ -141,8 +141,10 @@ function App() {
   );
 }
 
-export default codePush({
-  checkFrequency: codePush.CheckFrequency.ON_APP_RESUME,
-  updateDialog: {},
-  installMode: codePush.InstallMode.IMMEDIATE
-})(App);
+export default __DEV__
+  ? App
+  : codePush({
+      checkFrequency: codePush.CheckFrequency.ON_APP_RESUME,
+      updateDialog: {},
+      installMode: codePush.InstallMode.IMMEDIATE
+    })(App);
