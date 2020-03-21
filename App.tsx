@@ -4,6 +4,8 @@ import { BleManager, Device } from 'react-native-ble-plx';
 import { Permissions } from 'react-native-unimodules';
 import codePush from 'react-native-code-push';
 
+import { VictoryBar, VictoryChart, VictoryLine } from 'victory-native';
+
 const UART_SERVICE_UUID = '0000FFE0-0000-1000-8000-00805F9B34FB';
 const UART_CHARACTERISTIC_UUID = '0000FFE1-0000-1000-8000-00805F9B34FB';
 
@@ -122,6 +124,22 @@ function App() {
               </React.Fragment>
             ))}
       </ScrollView>
+
+      {/* <VictoryBar /> */}
+
+      {/* <VictoryChart>
+        <VictoryLine
+          samples={25}
+          y={d => Math.sin(5 * Math.PI * d.x)}
+          interpolation="natural"
+        />
+        <VictoryLine
+          samples={100}
+          style={{ data: { stroke: 'red' } }}
+          y={d => Math.cos(5 * Math.PI * d.x)}
+          interpolation="natural"
+        />
+      </VictoryChart> */}
 
       <View style={{ alignItems: 'center' }}>
         <Button
