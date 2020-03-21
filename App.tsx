@@ -3,6 +3,9 @@ import { Text, View, Button, TouchableOpacity, ScrollView } from 'react-native';
 import { BleManager, Device } from 'react-native-ble-plx';
 import { Permissions } from 'react-native-unimodules';
 
+const UART_SERVICE_UUID = '0000FFE0-0000-1000-8000-00805F9B34FB';
+const UART_CHARACTERISTIC_UUID = '0000FFE1-0000-1000-8000-00805F9B34FB';
+
 export default function App() {
   const [manager] = React.useState(() => new BleManager());
 
@@ -86,18 +89,24 @@ export default function App() {
               <React.Fragment key={device.id}>
                 <TouchableOpacity
                   onPress={() => {
-                    console.log('connecting to', device.id);
-
                     manager.connectToDevice(device.id).then(
-                      () =>
-                        device.discoverAllServicesAndCharacteristics().then(
-                          () => {
-                            console.log('device');
-                          },
-                          err => {
-                            console.log('failed', err);
+                      () => {
+                        const subscription = device.monitorCharacteristicForService(
+                          UART_SERVICE_UUID,
+                          UART_CHARACTERISTIC_UUID,
+                          (error, characteristic) => {
+                            console.log('received', characteristic.value);
                           }
-                        ),
+                        );
+                      },
+                      // device.discoverAllServicesAndCharacteristics().then(
+                      //   () => {
+                      //     console.log('device');
+                      //   },
+                      //   err => {
+                      //     console.log('failed', err);
+                      //   }
+                      // ),
 
                       err => {
                         alert('Fallo de conexión');
