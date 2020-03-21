@@ -1,12 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { BleManager, Device } from 'react-native-ble-plx';
-// import {
-//   // Asset,
-//   // Constants,
-//   // FileSystem,
-//   Permissions
-// } from 'react-native-unimodules';
+import { Permissions } from 'react-native-unimodules';
 
 function DevicesList({ manager }: { manager: BleManager }) {
   return null;
@@ -19,32 +14,38 @@ export default function App() {
   }>({});
 
   React.useEffect(() => {
-    function scanAndConnect() {
-      manager.startDeviceScan(null, null, (error, device) => {
-        if (error) {
-          // Handle error (scanning will be stopped automatically)
-          console.error(error);
-          return;
-        }
-
-        setDevices(state => ({
-          ...state,
-
-          [device.id]: {
-            foundAt: new Date(),
-            device
-          }
-        }));
-      });
-    }
-
-    const subscription = manager.onStateChange(state => {
-      // console.log('state', state);
-      if (state === 'PoweredOn') {
-        scanAndConnect();
-        subscription.remove();
+    Permissions.askAsync(Permissions.LOCATION).then(({ status }) => {
+      if (status !== 'granted') {
+        alert('BLE no autorizado');
+        return;
       }
-    }, true);
+
+      function scanAndConnect() {
+        manager.startDeviceScan(null, null, (error, device) => {
+          if (error) {
+            // Handle error (scanning will be stopped automatically)
+            alert(error);
+            return;
+          }
+
+          setDevices(state => ({
+            ...state,
+
+            [device.id]: {
+              foundAt: new Date(),
+              device
+            }
+          }));
+        });
+      }
+
+      const subscription = manager.onStateChange(state => {
+        if (state === 'PoweredOn') {
+          scanAndConnect();
+          subscription.remove();
+        }
+      }, true);
+    });
   }, [manager]);
 
   return (
