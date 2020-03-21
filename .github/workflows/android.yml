@@ -1,10 +1,9 @@
 name: Build Android and iOS
 
 on:
-  [push]
-  # push:
-  #   branches:
-  #     - master
+  push:
+    branches:
+      - does-not-work-yet
 
 jobs:
   install-and-test:
