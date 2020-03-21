@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">insmed</string>
+    <string moduleConfig="true" name="CodePushDeploymentKey">8g_Jknd19Iz5sgmpgqret7UyOGtTrw4YpZnhx</string>
 </resources>
