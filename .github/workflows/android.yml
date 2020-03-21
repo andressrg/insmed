@@ -1,9 +1,10 @@
 name: Build Android and iOS
 
 on:
-  push:
-    branches:
-      - master
+  [push]
+  # push:
+  #   branches:
+  #     - master
 jobs:
   install-and-test:
     runs-on: ubuntu-latest
