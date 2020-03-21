@@ -71,7 +71,7 @@ export default function App() {
       <View style={{ height: 20 }} />
 
       <Text style={{ fontWeight: 'bold', textAlign: 'center' }}>
-        Nearby BLE devices:
+        Dispositivos cercanos:
       </Text>
 
       <View style={{ height: 20 }} />
