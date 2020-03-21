@@ -2,11 +2,12 @@ import React from 'react';
 import { Text, View, Button, TouchableOpacity, ScrollView } from 'react-native';
 import { BleManager, Device } from 'react-native-ble-plx';
 import { Permissions } from 'react-native-unimodules';
+import codePush from 'react-native-code-push';
 
 const UART_SERVICE_UUID = '0000FFE0-0000-1000-8000-00805F9B34FB';
 const UART_CHARACTERISTIC_UUID = '0000FFE1-0000-1000-8000-00805F9B34FB';
 
-export default function App() {
+function App() {
   const [manager] = React.useState(() => new BleManager());
 
   const [findDevices, setFindDevices] = React.useState(false);
@@ -71,7 +72,7 @@ export default function App() {
       <View style={{ height: 20 }} />
 
       <Text style={{ fontWeight: 'bold', textAlign: 'center' }}>
-        Nearby BLE devices:
+        Dispositivos cercanos:
       </Text>
 
       <View style={{ height: 20 }} />
@@ -128,10 +129,20 @@ export default function App() {
             setDevices({});
             setFindDevices(state => !state);
           }}
-          title={findDevices ? 'Parar la busqueda' : 'Buscar dispositivos'}
+          title={
+            findDevices
+              ? 'Parar la busqueda'
+              : 'Buscar dispositivos disponibles'
+          }
         />
       </View>
       <View style={{ height: 20 }} />
     </View>
   );
 }
+
+export default codePush({
+  checkFrequency: codePush.CheckFrequency.ON_APP_RESUME,
+  updateDialog: {},
+  installMode: codePush.InstallMode.IMMEDIATE
+})(App);

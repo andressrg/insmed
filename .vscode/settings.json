@@ -2,5 +2,6 @@
   "cSpell.words": [
     "uart",
     "unimodules"
-  ]
+  ],
+  "java.configuration.updateBuildConfiguration": "disabled"
 }
