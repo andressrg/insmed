@@ -1,11 +1,7 @@
 import React from 'react';
-import { StyleSheet, Text, View, Button } from 'react-native';
+import { Text, View, Button, TouchableOpacity, ScrollView } from 'react-native';
 import { BleManager, Device } from 'react-native-ble-plx';
 import { Permissions } from 'react-native-unimodules';
-
-function DevicesList({ manager }: { manager: BleManager }) {
-  return null;
-}
 
 export default function App() {
   const [manager] = React.useState(() => new BleManager());
@@ -68,32 +64,65 @@ export default function App() {
   }, [manager, findDevices]);
 
   return (
-    <View style={styles.container}>
-      <Text style={{ fontWeight: 'bold' }}>Nearby BLE devices:</Text>
+    <View style={{ flex: 1 }}>
+      <View style={{ height: 20 }} />
+
+      <Text style={{ fontWeight: 'bold', textAlign: 'center' }}>
+        Nearby BLE devices:
+      </Text>
 
       <View style={{ height: 20 }} />
 
-      {findDevices &&
-        Object.values(devices).map(({ foundAt, device }) => (
-          <Text key={device.id}>{device.name ?? device.id}</Text>
-        ))}
+      <ScrollView contentContainerStyle={{ alignItems: 'center' }}>
+        {findDevices &&
+          Object.values(devices)
+            .map(({ device, ...rest }) => ({
+              ...rest,
+              device,
+              title: device.name ?? device.id
+            }))
+            .sort((a, b) => ('' + a.title).localeCompare(b.title))
+            .map(({ device, title }) => (
+              <React.Fragment key={device.id}>
+                <TouchableOpacity
+                  onPress={() => {
+                    console.log('connecting to', device.id);
 
-      <Button
-        onPress={() => {
-          setDevices({});
-          setFindDevices(state => !state);
-        }}
-        title={findDevices ? 'Parar la busqueda' : 'Buscar dispositivos'}
-      />
+                    manager.connectToDevice(device.id).then(
+                      () =>
+                        device.discoverAllServicesAndCharacteristics().then(
+                          () => {
+                            console.log('device');
+                          },
+                          err => {
+                            console.log('failed', err);
+                          }
+                        ),
+
+                      err => {
+                        alert('Fallo de conexión');
+                      }
+                    );
+                  }}
+                >
+                  <Text>{title}</Text>
+                </TouchableOpacity>
+
+                <View style={{ height: 10 }} />
+              </React.Fragment>
+            ))}
+      </ScrollView>
+
+      <View style={{ alignItems: 'center' }}>
+        <Button
+          onPress={() => {
+            setDevices({});
+            setFindDevices(state => !state);
+          }}
+          title={findDevices ? 'Parar la busqueda' : 'Buscar dispositivos'}
+        />
+      </View>
+      <View style={{ height: 20 }} />
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center'
-  }
-});
