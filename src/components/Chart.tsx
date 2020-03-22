@@ -11,7 +11,7 @@ const X_DURATION = 0.5 * 60 * 1000;
 
 export function Chart() {
   const [data, setData] = React.useState<{ x: number; y: number }[]>([]);
-  const [newData, setNewData] = React.useState<{ x: number; y: number }[]>([]);
+  // const [newData, setNewData] = React.useState<{ x: number; y: number }[]>([]);
   const [startTime] = React.useState(() => Date.now());
 
   React.useEffect(() => {
@@ -66,7 +66,7 @@ export function Chart() {
     if (currentTime < prevTimeRef.current) {
       setTimeCutoff(time);
     }
-  });
+  }, [currentTime, time]);
 
   React.useEffect(() => {
     prevTimeRef.current = currentTime;
@@ -80,7 +80,7 @@ export function Chart() {
           ...p,
           x: ((p.x - startTime) / 1000) % (X_DURATION / 1000)
         })),
-    [data]
+    [data, startTime, timeCutoff]
   );
 
   return (

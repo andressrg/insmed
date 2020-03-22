@@ -12,7 +12,7 @@ const UART_CHARACTERISTIC_UUID = '0000FFE1-0000-1000-8000-00805F9B34FB';
 function App() {
   const [manager] = React.useState(() => new BleManager());
 
-  const [findDevices, setFindDevices] = React.useState(true);
+  const [findDevices, setFindDevices] = React.useState(false);
 
   const [devices, setDevices] = React.useState<{
     [id: string]: { foundAt: Date; device: Device };
