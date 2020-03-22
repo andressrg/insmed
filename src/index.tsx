@@ -7,26 +7,97 @@ import {
   ScrollView,
   SafeAreaView
 } from 'react-native';
-import { BleManager, Device, Characteristic } from 'react-native-ble-plx';
+import { BleManager, Device } from 'react-native-ble-plx';
+import { Dimensions } from 'react-native';
 import { Permissions } from 'react-native-unimodules';
 import codePush from 'react-native-code-push';
+import {
+  RecyclerListView,
+  DataProvider,
+  LayoutProvider
+} from 'recyclerlistview';
+import { useAsync } from 'react-async';
 
 import { Chart } from './components/Chart';
+import { SQLiteContextProvider, SQLiteContext } from './components/SQLContext';
 
-const UART_SERVICE_UUID = '0000FFE0-0000-1000-8000-00805F9B34FB';
-const UART_CHARACTERISTIC_UUID = '0000FFE1-0000-1000-8000-00805F9B34FB';
+function useScreenDimensions() {
+  const [screenData, setScreenData] = React.useState(Dimensions.get('screen'));
+
+  React.useEffect(() => {
+    const onChange = result => {
+      setScreenData(result.screen);
+    };
+
+    Dimensions.addEventListener('change', onChange);
+
+    return () => Dimensions.removeEventListener('change', onChange);
+  });
+
+  return {
+    ...screenData,
+    isLandscape: screenData.width > screenData.height
+  };
+}
+
+const ROW_HEIGHT = 40;
+
+function Measurements() {
+  const { width: screenWidth } = useScreenDimensions();
+  const dbContext = React.useContext(SQLiteContext);
+
+  // @ts-ignore
+  const { data } = useAsync({
+    promiseFn: dbContext.getMeasurements,
+    deviceId: 1
+  });
+
+  const layoutProvider = React.useMemo(
+    () =>
+      new LayoutProvider(
+        _ => 0,
+        (_, dim) => {
+          dim.width = screenWidth;
+          dim.height = ROW_HEIGHT;
+        }
+      ),
+    [screenWidth]
+  );
+
+  const rowRenderer = React.useCallback(
+    (_, row) => (
+      <View style={{ height: ROW_HEIGHT }}>
+        <Text>{row.value}</Text>
+      </View>
+    ),
+    []
+  );
+
+  const dataProvider = React.useMemo(
+    () => new DataProvider((r1, r2) => r1 !== r2).cloneWithRows(data || []),
+    [data]
+  );
+
+  return (data || []).length === 0 ? null : (
+    <RecyclerListView
+      layoutProvider={layoutProvider}
+      dataProvider={dataProvider}
+      rowRenderer={rowRenderer}
+    />
+  );
+}
 
 function App() {
   const [manager] = React.useState(() => new BleManager());
 
-  const [findDevices, setFindDevices] = React.useState(true);
+  const [findDevices, setFindDevices] = React.useState(false);
 
   const [devices, setDevices] = React.useState<{
     [id: string]: { foundAt: Date; device: Device };
   }>({});
 
   React.useEffect(() => {
-    let deactivators = [];
+    let deactivators: (() => void)[] = [];
 
     if (findDevices) {
       Permissions.askAsync(Permissions.LOCATION).then(({ status }) => {
@@ -43,14 +114,15 @@ function App() {
               return;
             }
 
-            setDevices(state => ({
-              ...state,
+            device != null &&
+              setDevices(state => ({
+                ...state,
 
-              [device.id]: {
-                foundAt: new Date(),
-                device
-              }
-            }));
+                [device.id]: {
+                  foundAt: new Date(),
+                  device
+                }
+              }));
           });
 
           deactivators.push(() => manager.stopDeviceScan());
@@ -76,7 +148,9 @@ function App() {
     return () => deactivators.forEach(fn => fn());
   }, [manager, findDevices]);
 
-  return (
+  return false ? (
+    <Measurements />
+  ) : (
     <SafeAreaView style={{ flex: 1 }}>
       <View style={{ height: 20 }} />
 
@@ -90,7 +164,7 @@ function App() {
         {findDevices &&
           Object.values(devices)
             .filter(({ device }) => device.name != null)
-            .sort((a, b) => ('' + a.device.name).localeCompare(b.device.name))
+            .sort((a, b) => ('' + a.device.name!).localeCompare(b.device.name!))
             .map(({ device }) => (
               <React.Fragment key={device.id}>
                 <TouchableOpacity
@@ -98,15 +172,6 @@ function App() {
                     manager
                       .connectToDevice(device.id)
                       .then(
-                        // () => {
-                        //   const subscription = device.monitorCharacteristicForService(
-                        //     UART_SERVICE_UUID,
-                        //     UART_CHARACTERISTIC_UUID,
-                        //     (error, characteristic) => {
-                        //       console.log('received', characteristic.value);
-                        //     }
-                        //   );
-                        // },
                         () => {
                           alert(`Connected to ${device.name}`);
 
@@ -184,10 +249,16 @@ function App() {
   );
 }
 
+const AppWithContext = () => (
+  <SQLiteContextProvider>
+    <App />
+  </SQLiteContextProvider>
+);
+
 export default __DEV__
-  ? App
+  ? AppWithContext
   : codePush({
       checkFrequency: codePush.CheckFrequency.ON_APP_RESUME,
       updateDialog: {},
       installMode: codePush.InstallMode.IMMEDIATE
-    })(App);
+    })(AppWithContext);

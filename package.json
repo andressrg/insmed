@@ -13,6 +13,7 @@
   "dependencies": {
     "expo": "~36.0.0",
     "react": "~16.9.0",
+    "react-async": "^10.0.0",
     "react-dom": "~16.9.0",
     "react-native": "~0.61.4",
     "react-native-ble-plx": "^1.1.1",
@@ -20,15 +21,17 @@
     "react-native-gesture-handler": "~1.5.0",
     "react-native-reanimated": "~1.4.0",
     "react-native-screens": "2.0.0-alpha.12",
+    "react-native-sqlite-storage": "^4.1.0",
     "react-native-svg": "^12.0.3",
     "react-native-unimodules": "~0.7.0",
     "react-native-web": "~0.11.7",
+    "recyclerlistview": "^3.0.0",
     "victory-native": "^34.1.0"
   },
   "devDependencies": {
-    "@babel/core": "~7.6.0",
+    "@babel/core": "~7.9.0",
     "@types/react": "~16.9.0",
-    "@types/react-native": "~0.60.23",
+    "@types/react-native": "~0.61.23",
     "@typescript-eslint/eslint-plugin": "2.x",
     "@typescript-eslint/parser": "2.x",
     "babel-eslint": "10.x",
@@ -41,7 +44,7 @@
     "eslint-plugin-react": "7.x",
     "eslint-plugin-react-hooks": "2.x",
     "jest-expo": "~36.0.1",
-    "typescript": "~3.6.3"
+    "typescript": "~3.8.3"
   },
   "jest": {
     "preset": "react-native"
