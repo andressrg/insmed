@@ -5,7 +5,9 @@
     "ios": "react-native run-ios",
     "web": "expo start --web",
     "start": "react-native start",
-    "test": "jest"
+    "test": "jest",
+    "build:staging": "cd ./android && ./gradlew assembleRelease",
+    "publish:staging": "appcenter codepush release-react --app andressrg/insmed"
   },
   "dependencies": {
     "expo": "~36.0.0",
