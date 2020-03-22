@@ -83,13 +83,8 @@ function App() {
         {findDevices &&
           Object.values(devices)
             .filter(({ device }) => device.name != null)
-            .map(({ device, ...rest }) => ({
-              ...rest,
-              device,
-              title: device.name ?? device.id
-            }))
-            .sort((a, b) => ('' + a.title).localeCompare(b.title))
-            .map(({ device, title }) => (
+            .sort((a, b) => ('' + a.device.name).localeCompare(b.device.name))
+            .map(({ device }) => (
               <React.Fragment key={device.id}>
                 <TouchableOpacity
                   onPress={() => {
@@ -130,15 +125,13 @@ function App() {
                     );
                   }}
                 >
-                  <Text>{title}</Text>
+                  <Text>{device.name}</Text>
                 </TouchableOpacity>
 
                 <View style={{ height: 10 }} />
               </React.Fragment>
             ))}
       </ScrollView>
-
-      {/* <VictoryBar /> */}
 
       {!findDevices && <Chart />}
 
