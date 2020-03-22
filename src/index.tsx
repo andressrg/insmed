@@ -4,7 +4,7 @@ import { BleManager, Device } from 'react-native-ble-plx';
 import { Permissions } from 'react-native-unimodules';
 import codePush from 'react-native-code-push';
 
-import { VictoryBar, VictoryChart, VictoryLine } from 'victory-native';
+import { Chart } from './components/Chart';
 
 const UART_SERVICE_UUID = '0000FFE0-0000-1000-8000-00805F9B34FB';
 const UART_CHARACTERISTIC_UUID = '0000FFE1-0000-1000-8000-00805F9B34FB';
@@ -82,34 +82,42 @@ function App() {
       <ScrollView contentContainerStyle={{ alignItems: 'center' }}>
         {findDevices &&
           Object.values(devices)
-            .map(({ device, ...rest }) => ({
-              ...rest,
-              device,
-              title: device.name ?? device.id
-            }))
-            .sort((a, b) => ('' + a.title).localeCompare(b.title))
-            .map(({ device, title }) => (
+            .filter(({ device }) => device.name != null)
+            .sort((a, b) => ('' + a.device.name).localeCompare(b.device.name))
+            .map(({ device }) => (
               <React.Fragment key={device.id}>
                 <TouchableOpacity
                   onPress={() => {
                     manager.connectToDevice(device.id).then(
+                      // () => {
+                      //   const subscription = device.monitorCharacteristicForService(
+                      //     UART_SERVICE_UUID,
+                      //     UART_CHARACTERISTIC_UUID,
+                      //     (error, characteristic) => {
+                      //       console.log('received', characteristic.value);
+                      //     }
+                      //   );
+                      // },
                       () => {
-                        const subscription = device.monitorCharacteristicForService(
-                          UART_SERVICE_UUID,
-                          UART_CHARACTERISTIC_UUID,
-                          (error, characteristic) => {
-                            console.log('received', characteristic.value);
-                          }
-                        );
+                        alert(`Connected to ${device.name}`);
+
+                        return device
+                          .discoverAllServicesAndCharacteristics()
+                          .then(
+                            async device => {
+                              alert(
+                                `services: ${JSON.stringify(
+                                  device.serviceData,
+                                  null,
+                                  2
+                                )}`
+                              );
+                            },
+                            err => {
+                              alert('failed');
+                            }
+                          );
                       },
-                      // device.discoverAllServicesAndCharacteristics().then(
-                      //   () => {
-                      //     console.log('device');
-                      //   },
-                      //   err => {
-                      //     console.log('failed', err);
-                      //   }
-                      // ),
 
                       err => {
                         alert('Fallo de conexión');
@@ -117,7 +125,7 @@ function App() {
                     );
                   }}
                 >
-                  <Text>{title}</Text>
+                  <Text>{device.name}</Text>
                 </TouchableOpacity>
 
                 <View style={{ height: 10 }} />
@@ -125,21 +133,7 @@ function App() {
             ))}
       </ScrollView>
 
-      {/* <VictoryBar /> */}
-
-      {/* <VictoryChart>
-        <VictoryLine
-          samples={25}
-          y={d => Math.sin(5 * Math.PI * d.x)}
-          interpolation="natural"
-        />
-        <VictoryLine
-          samples={100}
-          style={{ data: { stroke: 'red' } }}
-          y={d => Math.cos(5 * Math.PI * d.x)}
-          interpolation="natural"
-        />
-      </VictoryChart> */}
+      {!findDevices && <Chart />}
 
       <View style={{ alignItems: 'center' }}>
         <Button
