@@ -12,7 +12,7 @@ const UART_CHARACTERISTIC_UUID = '0000FFE1-0000-1000-8000-00805F9B34FB';
 function App() {
   const [manager] = React.useState(() => new BleManager());
 
-  const [findDevices, setFindDevices] = React.useState(false);
+  const [findDevices, setFindDevices] = React.useState(true);
 
   const [devices, setDevices] = React.useState<{
     [id: string]: { foundAt: Date; device: Device };
@@ -88,41 +88,65 @@ function App() {
               <React.Fragment key={device.id}>
                 <TouchableOpacity
                   onPress={() => {
-                    manager.connectToDevice(device.id).then(
-                      // () => {
-                      //   const subscription = device.monitorCharacteristicForService(
-                      //     UART_SERVICE_UUID,
-                      //     UART_CHARACTERISTIC_UUID,
-                      //     (error, characteristic) => {
-                      //       console.log('received', characteristic.value);
-                      //     }
-                      //   );
-                      // },
-                      () => {
-                        alert(`Connected to ${device.name}`);
+                    manager
+                      .connectToDevice(device.id)
+                      .then(
+                        // () => {
+                        //   const subscription = device.monitorCharacteristicForService(
+                        //     UART_SERVICE_UUID,
+                        //     UART_CHARACTERISTIC_UUID,
+                        //     (error, characteristic) => {
+                        //       console.log('received', characteristic.value);
+                        //     }
+                        //   );
+                        // },
+                        () => {
+                          alert(`Connected to ${device.name}`);
 
-                        return device
-                          .discoverAllServicesAndCharacteristics()
-                          .then(
-                            async device => {
-                              alert(
-                                `services: ${JSON.stringify(
-                                  device.serviceData,
-                                  null,
-                                  2
-                                )}`
-                              );
-                            },
-                            err => {
-                              alert('failed');
-                            }
-                          );
-                      },
+                          return device
+                            .discoverAllServicesAndCharacteristics()
+                            .then(
+                              async device => {
+                                alert(
+                                  `services for ${device.name}: ${(
+                                    await Promise.all(
+                                      (await device.services()).map(service =>
+                                        service
+                                          .characteristics()
+                                          .then(characteristics => ({
+                                            service,
+                                            characteristics
+                                          }))
+                                      )
+                                    )
+                                  )
+                                    .map(
+                                      ({ service, characteristics }) =>
+                                        `service: ${
+                                          service.id
+                                        } ${characteristics
+                                          .map(
+                                            characteristic =>
+                                              characteristic.uuid
+                                          )
+                                          .join(', ')}`
+                                    )
+                                    .join('; ')}`
+                                );
+                              },
+                              err => {
+                                alert('failed');
+                              }
+                            );
+                        },
 
-                      err => {
-                        alert('Fallo de conexión');
-                      }
-                    );
+                        err => {
+                          alert('Fallo de conexión');
+                        }
+                      )
+                      .catch(err => {
+                        alert(`Error ${err} ${JSON.stringify(err)}`);
+                      });
                   }}
                 >
                   <Text>{device.name}</Text>
