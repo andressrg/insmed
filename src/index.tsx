@@ -4,140 +4,15 @@ import { BleManager, Device } from 'react-native-ble-plx';
 import { Permissions } from 'react-native-unimodules';
 import codePush from 'react-native-code-push';
 
-import {
-  VictoryBar,
-  VictoryChart,
-  VictoryLine,
-  VictoryTheme
-} from 'victory-native';
+import { Chart } from './components/Chart';
 
 const UART_SERVICE_UUID = '0000FFE0-0000-1000-8000-00805F9B34FB';
 const UART_CHARACTERISTIC_UUID = '0000FFE1-0000-1000-8000-00805F9B34FB';
 
-const X_DURATION = 0.5 * 60 * 1000;
-
-function Chart() {
-  const [data, setData] = React.useState<{ x: number; y: number }[]>([]);
-  const [newData, setNewData] = React.useState<{ x: number; y: number }[]>([]);
-  const [startTime] = React.useState(() => Date.now());
-
-  React.useEffect(() => {
-    let stop = false;
-    const fn = () => {
-      if (stop) return;
-
-      Math.random() > 0.1 &&
-        (() => {
-          const point = {
-            // x: (Date.now() / 1000) % (X_DURATION / 1000),
-            x: Date.now(),
-            // y: Math.random() * 5
-            y: 5 * Math.sin(((Date.now() / 1000) % (X_DURATION / 1000)) / 1)
-          };
-
-          setData(state => [...state, point]);
-        })();
-
-      requestAnimationFrame(fn);
-    };
-
-    requestAnimationFrame(fn);
-
-    return () => (stop = true);
-  }, []);
-
-  const [time, setTime] = React.useState(() => Date.now());
-
-  React.useEffect(() => {
-    let stop = false;
-    const fn = () => {
-      if (stop) return;
-
-      setTime(Date.now());
-
-      requestAnimationFrame(fn);
-    };
-
-    requestAnimationFrame(fn);
-
-    return () => (stop = true);
-  }, []);
-
-  const currentTime = ((time - startTime) / 1000) % (X_DURATION / 1000);
-
-  const prevTimeRef = React.useRef(currentTime);
-
-  const [timeCutoff, setTimeCutoff] = React.useState(time);
-  React.useEffect(() => {
-    // console.log('currentTime', currentTime, 'prevTime', prevTimeRef.current);
-    if (currentTime < prevTimeRef.current) {
-      setTimeCutoff(time);
-    }
-  });
-
-  React.useEffect(() => {
-    prevTimeRef.current = currentTime;
-  });
-
-  const calcData = React.useMemo(
-    () =>
-      data
-        .filter(p => timeCutoff < p.x)
-        .map(p => ({
-          ...p,
-          x: ((p.x - startTime) / 1000) % (X_DURATION / 1000)
-        })),
-    [data]
-  );
-
-  return (
-    <VictoryChart
-      // animate={{ duration: 500 }}
-      theme={VictoryTheme.material}
-      domainPadding={20}
-      domain={{
-        x: [0, X_DURATION / 1000],
-        y: [-5, 5]
-        // y: [
-        //   Math.min(0, ...data.map(d => d.y)),
-        //   Math.max(0, ...data.map(d => d.y))
-        // ]
-      }}
-    >
-      {/* <VictoryLine
-        samples={25}
-        y={d => Math.sin(5 * Math.PI * d.x)}
-        interpolation="natural"
-      /> */}
-      <VictoryLine
-        style={{ data: { stroke: 'red' } }}
-        data={[
-          {
-            x: currentTime,
-            y: -100
-          },
-          {
-            x: currentTime,
-            y: 100
-          }
-        ]}
-      />
-
-      <VictoryLine
-        // animate={{ duration: 500 }}
-        // samples={100}
-        // style={{ data: { stroke: 'red' } }}
-        data={calcData}
-        // interpolation="natural"
-      />
-    </VictoryChart>
-  );
-}
-
 function App() {
   const [manager] = React.useState(() => new BleManager());
 
-  const [findDevices, setFindDevices] = React.useState(false);
+  const [findDevices, setFindDevices] = React.useState(true);
 
   const [devices, setDevices] = React.useState<{
     [id: string]: { foundAt: Date; device: Device };
@@ -207,6 +82,7 @@ function App() {
       <ScrollView contentContainerStyle={{ alignItems: 'center' }}>
         {findDevices &&
           Object.values(devices)
+            .filter(({ device }) => device.name != null)
             .map(({ device, ...rest }) => ({
               ...rest,
               device,
@@ -227,18 +103,26 @@ function App() {
                       //     }
                       //   );
                       // },
-                      () =>
-                        device.discoverAllServicesAndCharacteristics().then(
-                          async device => {
-                            alert(
-                              'services: ' +
-                                JSON.stringify(device.serviceData, null, 2)
-                            );
-                          },
-                          err => {
-                            alert('failed');
-                          }
-                        ),
+                      () => {
+                        alert(`Connected to ${device.name}`);
+
+                        return device
+                          .discoverAllServicesAndCharacteristics()
+                          .then(
+                            async device => {
+                              alert(
+                                `services: ${JSON.stringify(
+                                  device.serviceData,
+                                  null,
+                                  2
+                                )}`
+                              );
+                            },
+                            err => {
+                              alert('failed');
+                            }
+                          );
+                      },
 
                       err => {
                         alert('Fallo de conexión');
