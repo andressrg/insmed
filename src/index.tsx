@@ -4,6 +4,7 @@ import { BleManager, Device, Characteristic } from 'react-native-ble-plx';
 import { Permissions } from 'react-native-unimodules';
 import codePush from 'react-native-code-push';
 import { decode } from 'base-64';
+import { Buffer } from 'buffer';
 
 import { Chart } from './components/Chart';
 
@@ -26,9 +27,9 @@ function UARTLog({ characteristic }: { characteristic: Characteristic }) {
   React.useEffect(() => {
     const subscription = characteristic.monitor(async (err, char) => {
       if (char) {
-        const readData = (await char.read()).value;
+        // const readData = (await char.read()).value;
 
-        setData(state => [...state, { value: readData, ts: Date.now() }]);
+        setData(state => [...state, { value: char.value, ts: Date.now() }]);
       }
     });
 
@@ -37,12 +38,20 @@ function UARTLog({ characteristic }: { characteristic: Characteristic }) {
 
   return (
     <>
-      {multiline(data.map(d => decode(d.value)).join(''))}
-
       <ScrollView contentContainerStyle={{ alignItems: 'center' }}>
+        <Text>
+          {data
+            .map(d => decode(d.value))
+            .join('')
+            .split('\r\n')
+            .join(',')}
+        </Text>
+
         {[...data].reverse().map(row => (
           <React.Fragment key={row.ts}>
-            <Text>{row.value}</Text>
+            <Text>
+              {row.value} {`"${decode(row.value)}"`}
+            </Text>
 
             <View style={{ height: 10 }} />
           </React.Fragment>
@@ -115,6 +124,18 @@ function App() {
     return () => deactivators.forEach(fn => fn());
   }, [manager, findDevices]);
 
+  // React.useEffect(() => {
+  //   setTimeout(() => {
+  //     // alert('base64');
+  //     alert(
+  //       `Val: "${Buffer.from(
+  //         'Bg==' + 'Bg==' + 'Bg==' + 'Bg==' + 'Bg==',
+  //         'base64'
+  //       ).toString('binary')}"`
+  //     );
+  //   }, 1000);
+  // }, []);
+
   return (
     <View style={{ flex: 1 }}>
       <View style={{ height: 20 }} />
@@ -151,7 +172,7 @@ function App() {
                           //   );
                           // },
                           () => {
-                            alert(`Connected to ${device.name}`);
+                            // alert(`Connected to ${device.name}`);
 
                             return device
                               .discoverAllServicesAndCharacteristics()
@@ -198,10 +219,10 @@ function App() {
                                   }
 
                                   try {
-                                    alert(
-                                      `Char: ${characteristic &&
-                                        characteristic.uuid}`
-                                    );
+                                    // alert(
+                                    //   `Char: ${characteristic &&
+                                    //     characteristic.uuid}`
+                                    // );
 
                                     if (characteristic) {
                                       setSelectedCharacteristic(characteristic);
