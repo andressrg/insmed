@@ -1,18 +1,64 @@
 import React from 'react';
 import { Text, View, Button, TouchableOpacity, ScrollView } from 'react-native';
-import { BleManager, Device } from 'react-native-ble-plx';
+import { BleManager, Device, Characteristic } from 'react-native-ble-plx';
 import { Permissions } from 'react-native-unimodules';
 import codePush from 'react-native-code-push';
+import { decode } from 'base-64';
 
 import { Chart } from './components/Chart';
 
 const UART_SERVICE_UUID = '0000FFE0-0000-1000-8000-00805F9B34FB';
 const UART_CHARACTERISTIC_UUID = '0000FFE1-0000-1000-8000-00805F9B34FB';
 
+export function multiline(text?: string) {
+  return (text == null ? '' : text)
+    .split('\n')
+    .reduce(
+      (acc, line, index) =>
+        index === 0 ? [...acc, line] : [...acc, <br key={index} />, line],
+      [] as React.ReactNode[]
+    );
+}
+
+function UARTLog({ characteristic }: { characteristic: Characteristic }) {
+  const [data, setData] = React.useState<{ value: string; ts: number }[]>([]);
+
+  React.useEffect(() => {
+    const subscription = characteristic.monitor(async (err, char) => {
+      if (char) {
+        const readData = (await char.read()).value;
+
+        setData(state => [...state, { value: readData, ts: Date.now() }]);
+      }
+    });
+
+    return () => subscription.remove();
+  }, [characteristic]);
+
+  return (
+    <>
+      {multiline(data.map(d => decode(d.value)).join(''))}
+
+      <ScrollView contentContainerStyle={{ alignItems: 'center' }}>
+        {[...data].reverse().map(row => (
+          <React.Fragment key={row.ts}>
+            <Text>{row.value}</Text>
+
+            <View style={{ height: 10 }} />
+          </React.Fragment>
+        ))}
+      </ScrollView>
+    </>
+  );
+}
+
 function App() {
   const [manager] = React.useState(() => new BleManager());
 
   const [findDevices, setFindDevices] = React.useState(true);
+  const [selectedCharacteristic, setSelectedCharacteristic] = React.useState<
+    Characteristic
+  >();
 
   const [devices, setDevices] = React.useState<{
     [id: string]: { foundAt: Date; device: Device };
@@ -79,36 +125,39 @@ function App() {
 
       <View style={{ height: 20 }} />
 
-      <ScrollView contentContainerStyle={{ alignItems: 'center' }}>
-        {findDevices &&
-          Object.values(devices)
-            .filter(({ device }) => device.name != null)
-            .sort((a, b) => ('' + a.device.name).localeCompare(b.device.name))
-            .map(({ device }) => (
-              <React.Fragment key={device.id}>
-                <TouchableOpacity
-                  onPress={() => {
-                    manager
-                      .connectToDevice(device.id)
-                      .then(
-                        // () => {
-                        //   const subscription = device.monitorCharacteristicForService(
-                        //     UART_SERVICE_UUID,
-                        //     UART_CHARACTERISTIC_UUID,
-                        //     (error, characteristic) => {
-                        //       console.log('received', characteristic.value);
-                        //     }
-                        //   );
-                        // },
-                        () => {
-                          alert(`Connected to ${device.name}`);
+      {selectedCharacteristic != null ? (
+        <UARTLog characteristic={selectedCharacteristic} />
+      ) : (
+        <ScrollView contentContainerStyle={{ alignItems: 'center' }}>
+          {findDevices &&
+            selectedCharacteristic == null &&
+            Object.values(devices)
+              .filter(({ device }) => device.name != null)
+              .sort((a, b) => ('' + a.device.name).localeCompare(b.device.name))
+              .map(({ device }) => (
+                <React.Fragment key={device.id}>
+                  <TouchableOpacity
+                    onPress={() => {
+                      manager
+                        .connectToDevice(device.id)
+                        .then(
+                          // () => {
+                          //   const subscription = device.monitorCharacteristicForService(
+                          //     UART_SERVICE_UUID,
+                          //     UART_CHARACTERISTIC_UUID,
+                          //     (error, characteristic) => {
+                          //       console.log('received', characteristic.value);
+                          //     }
+                          //   );
+                          // },
+                          () => {
+                            alert(`Connected to ${device.name}`);
 
-                          return device
-                            .discoverAllServicesAndCharacteristics()
-                            .then(
-                              async device => {
-                                alert(
-                                  `services for ${device.name}: ${(
+                            return device
+                              .discoverAllServicesAndCharacteristics()
+                              .then(
+                                async device => {
+                                  const logs = (
                                     await Promise.all(
                                       (await device.services()).map(service =>
                                         service
@@ -119,43 +168,96 @@ function App() {
                                           }))
                                       )
                                     )
-                                  )
-                                    .map(
-                                      ({ service, characteristics }) =>
-                                        `service: ${
-                                          service.id
-                                        } ${characteristics
-                                          .map(
-                                            characteristic =>
-                                              characteristic.uuid
-                                          )
-                                          .join(', ')}`
-                                    )
-                                    .join('; ')}`
-                                );
-                              },
-                              err => {
-                                alert('failed');
-                              }
-                            );
-                        },
+                                  ).map(({ service, characteristics }) => {
+                                    return {
+                                      service,
+                                      characteristics,
+                                      log: `service: ${
+                                        service.id
+                                      } ${characteristics
+                                        .map(
+                                          characteristic => characteristic.uuid
+                                        )
+                                        .join(', ')}`
+                                    };
+                                  });
 
-                        err => {
-                          alert('Fallo de conexión');
-                        }
-                      )
-                      .catch(err => {
-                        alert(`Error ${err} ${JSON.stringify(err)}`);
-                      });
-                  }}
-                >
-                  <Text>{device.name}</Text>
-                </TouchableOpacity>
+                                  let characteristic:
+                                    | Characteristic
+                                    | undefined;
 
-                <View style={{ height: 10 }} />
-              </React.Fragment>
-            ))}
-      </ScrollView>
+                                  for (let row of logs) {
+                                    for (let char of row.characteristics) {
+                                      if (
+                                        char.uuid.toLowerCase() ===
+                                        UART_CHARACTERISTIC_UUID.toLowerCase()
+                                      ) {
+                                        characteristic = char;
+                                      }
+                                    }
+                                  }
+
+                                  try {
+                                    alert(
+                                      `Char: ${characteristic &&
+                                        characteristic.uuid}`
+                                    );
+
+                                    if (characteristic) {
+                                      setSelectedCharacteristic(characteristic);
+                                    }
+
+                                    // characteristic &&
+                                    //   characteristic.monitor(
+                                    //     async (err, char) => {
+                                    //       if (char) {
+                                    //         const readData = (await char.read())
+                                    //           .value;
+
+                                    //         alert(
+                                    //           `Data ${[
+                                    //             readData,
+                                    //             decode(readData)
+                                    //           ].join('; ')}`
+                                    //         );
+                                    //       }
+                                    //     }
+                                    //   );
+                                  } catch (err) {
+                                    alert(`error monitoring ${err}`);
+                                  }
+
+                                  // const service = logs.find(l =>
+                                  //   l.characteristics.find(
+                                  //     c => c.uid === UART_CHARACTERISTIC_UUID
+                                  //   )
+                                  // );
+
+                                  // alert(`services for ${device.name}: ${logs}`);
+                                },
+                                err => {
+                                  alert('failed');
+                                }
+                              );
+                          },
+
+                          err => {
+                            alert('Fallo de conexión');
+                          }
+                        )
+                        .catch(err => {
+                          alert(`Error ${err} ${JSON.stringify(err)}`);
+                        });
+                    }}
+                  >
+                    <Text>{device.name}</Text>
+                  </TouchableOpacity>
+
+                  <View style={{ height: 10 }} />
+                </React.Fragment>
+              ))}
+        </ScrollView>
+      )}
 
       {!findDevices && <Chart />}
 
