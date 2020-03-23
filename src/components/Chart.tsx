@@ -9,35 +9,44 @@ import {
 
 const X_DURATION = 0.5 * 60 * 1000;
 
-export function Chart() {
-  const [data, setData] = React.useState<{ x: number; y: number }[]>([]);
+export function Chart({ data }: { data: { x: number; y: number }[] }) {
+  // const [data, setData] = React.useState<{ x: number; y: number }[]>([]);
   // const [newData, setNewData] = React.useState<{ x: number; y: number }[]>([]);
-  const [startTime] = React.useState(() => Date.now());
+  // const [startTime] = React.useState(() => Date.now());
+  const [startTime, setStartTime] = React.useState(() => 0);
+  const [startData, setStartData] = React.useState(() => 0);
 
   React.useEffect(() => {
-    let stop = false;
-    const fn = () => {
-      if (stop) return;
+    if (startTime === 0 && data.length > 0) {
+      // setStartTime(Date.now());
+      setStartData(data[0].x);
+    }
+  }, [data, startTime]);
 
-      Math.random() > 0.1 &&
-        (() => {
-          const point = {
-            // x: (Date.now() / 1000) % (X_DURATION / 1000),
-            x: Date.now(),
-            // y: Math.random() * 5
-            y: 5 * Math.sin(((Date.now() / 1000) % (X_DURATION / 1000)) / 1)
-          };
+  // React.useEffect(() => {
+  //   let stop = false;
+  //   const fn = () => {
+  //     if (stop) return;
 
-          setData(state => [...state, point]);
-        })();
+  //     Math.random() > 0.1 &&
+  //       (() => {
+  //         const point = {
+  //           // x: (Date.now() / 1000) % (X_DURATION / 1000),
+  //           x: Date.now(),
+  //           // y: Math.random() * 5
+  //           y: 5 * Math.sin(((Date.now() / 1000) % (X_DURATION / 1000)) / 1)
+  //         };
 
-      requestAnimationFrame(fn);
-    };
+  //         setData(state => [...state, point]);
+  //       })();
 
-    requestAnimationFrame(fn);
+  //     requestAnimationFrame(fn);
+  //   };
 
-    return () => (stop = true);
-  }, []);
+  //   requestAnimationFrame(fn);
+
+  //   return () => (stop = true);
+  // }, []);
 
   const [time, setTime] = React.useState(() => Date.now());
 
@@ -72,16 +81,26 @@ export function Chart() {
     prevTimeRef.current = currentTime;
   });
 
+  console.log('currentTime', { startData, currentTime, timeCutoff, startTime });
+
   const calcData = React.useMemo(
     () =>
       data
-        .filter(p => timeCutoff < p.x)
+        .filter(
+          p =>
+            ((p.x - startTime) / 1000) % (X_DURATION / 1000) <
+              ((data[data.length - 1].x - startTime) / 1000) %
+                (X_DURATION / 1000) &&
+            data[data.length - 1].x - startTime - X_DURATION < p.x
+        )
         .map(p => ({
           ...p,
           x: ((p.x - startTime) / 1000) % (X_DURATION / 1000)
         })),
-    [data, startTime, timeCutoff]
+    [data, startTime]
   );
+
+  // console.log('calcData', calcData);
 
   return (
     <VictoryChart
@@ -102,7 +121,7 @@ export function Chart() {
         y={d => Math.sin(5 * Math.PI * d.x)}
         interpolation="natural"
       /> */}
-      <VictoryLine
+      {/* <VictoryLine
         style={{ data: { stroke: 'red' } }}
         data={[
           {
@@ -114,7 +133,7 @@ export function Chart() {
             y: 100
           }
         ]}
-      />
+      /> */}
 
       <VictoryLine
         // animate={{ duration: 500 }}
