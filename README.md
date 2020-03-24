@@ -1,4 +1,10 @@
-# insmed
+# InnspiraMED
+
+## Discussions
+
+We use discord: https://discord.gg/mBc3vUa
+
+## Hardware
 
 #### HC 10 Info
 
