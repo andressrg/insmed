@@ -36,6 +36,10 @@ target 'insmed' do
   pod 'glog', :podspec => "#{rnPrefix}/third-party-podspecs/glog.podspec"
   pod 'Folly', :podspec => "#{rnPrefix}/third-party-podspecs/Folly.podspec"
 
+
+  pod 'react-native-ble-plx', :path => '../node_modules/react-native-ble-plx'
+  pod 'react-native-ble-plx-swift', :path => '../node_modules/react-native-ble-plx'
+
   # Other native modules
 
   # Automatically detect installed unimodules
