@@ -1,5 +1,12 @@
 import React from 'react';
-import { Text, View, Button, TouchableOpacity, ScrollView } from 'react-native';
+import {
+  Text,
+  View,
+  Button,
+  TouchableOpacity,
+  ScrollView,
+  SafeAreaView
+} from 'react-native';
 import { BleManager, Device, Characteristic } from 'react-native-ble-plx';
 import { Permissions } from 'react-native-unimodules';
 import codePush from 'react-native-code-push';
@@ -134,7 +141,7 @@ function App() {
   // }, []);
 
   return (
-    <View style={{ flex: 1 }}>
+    <SafeAreaView style={{ flex: 1 }}>
       <View style={{ height: 20 }} />
 
       <Text style={{ fontWeight: 'bold', textAlign: 'center' }}>
@@ -285,7 +292,7 @@ function App() {
         />
       </View>
       <View style={{ height: 20 }} />
-    </View>
+    </SafeAreaView>
   );
 }
 
