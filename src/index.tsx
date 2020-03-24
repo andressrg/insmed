@@ -4,7 +4,6 @@ import { BleManager, Device, Characteristic } from 'react-native-ble-plx';
 import { Permissions } from 'react-native-unimodules';
 import codePush from 'react-native-code-push';
 import { decode } from 'base-64';
-import { Buffer } from 'buffer';
 
 import { Chart } from './components/Chart';
 
@@ -27,8 +26,6 @@ function UARTLog({ characteristic }: { characteristic: Characteristic }) {
   React.useEffect(() => {
     const subscription = characteristic.monitor(async (err, char) => {
       if (char) {
-        // const readData = (await char.read()).value;
-
         setData(state => [...state, { value: char.value, ts: Date.now() }]);
       }
     });
@@ -247,14 +244,6 @@ function App() {
                                   } catch (err) {
                                     alert(`error monitoring ${err}`);
                                   }
-
-                                  // const service = logs.find(l =>
-                                  //   l.characteristics.find(
-                                  //     c => c.uid === UART_CHARACTERISTIC_UUID
-                                  //   )
-                                  // );
-
-                                  // alert(`services for ${device.name}: ${logs}`);
                                 },
                                 err => {
                                   alert('failed');
