@@ -4,7 +4,11 @@
 
 # Xcode
 #
-build/
+!**/*.xcodeproj
+!**/*.pbxproj
+!**/*.xcworkspacedata
+!**/*.xcsettings
+!**/*.xcscheme
 *.pbxuser
 !default.pbxuser
 *.mode1v3
@@ -20,7 +24,7 @@ DerivedData
 *.hmap
 *.ipa
 *.xcuserstate
-project.xcworkspace
+insmed.xcworkspace
 
 # Android/IntelliJ
 #
@@ -54,3 +58,12 @@ buck-out/
 
 # Bundle artifact
 *.jsbundle
+
+#iOS
+ios/Pods
+
+
+#Cocoapods
+ios/Pods/
+ios/Podfile.lock
+RNTester/Gemfile.lock
