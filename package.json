@@ -7,7 +7,8 @@
     "start": "react-native start",
     "test": "jest",
     "build:staging": "cd ./android && ./gradlew assembleRelease",
-    "publish:staging": "appcenter codepush release-react --app andressrg/insmed"
+    "publish:staging": "appcenter codepush release-react --app andressrg/insmed",
+    "build:ios": "react-native bundle --entry-file='index.js' --bundle-output='./ios/insmed/main.jsbundle' --dev=false --platform='ios' --assets-dest='./ios'"
   },
   "dependencies": {
     "base-64": "^0.1.0",
