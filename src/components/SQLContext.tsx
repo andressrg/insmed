@@ -93,7 +93,7 @@ async function setupDb() {
             device_id INTEGER NOT NULL,
             timestamp INTEGER NOT NULL,
             external_timestamp INTEGER NOT NULL,
-            name TEXT NOT NULL,
+            type TEXT NOT NULL,
             value REAL NOT NULL,
             raw TEXT NOT NULL,
 
@@ -105,8 +105,8 @@ async function setupDb() {
 
       trx.executeSql(
         `
-          CREATE INDEX idx_measurement_device_name_timestamp_value
-          ON measurement (device_id, name, timestamp, value);
+          CREATE INDEX idx_measurement_device_type_timestamp_value
+          ON measurement (device_id, type, timestamp desc);
         `
       );
     });
@@ -125,14 +125,14 @@ async function setupDb() {
           device_id: 1,
           timestamp: Date.now(),
           external_timestamp: Date.now(),
-          name: 'pressure',
+          type: 'pressure',
           value: Math.random() * 70,
           raw: 'raw'
         }));
 
         trx.executeSql(
           `
-            INSERT INTO measurement (device_id, timestamp, external_timestamp, name, value, raw)
+            INSERT INTO measurement (device_id, timestamp, external_timestamp, type, value, raw)
             VALUES
               ${values.map(() => `(?, ?, ?, ?, ?, ?)`)};
           `,
@@ -142,7 +142,7 @@ async function setupDb() {
               row.device_id,
               row.timestamp,
               row.external_timestamp,
-              row.name,
+              row.type,
               row.value,
               row.raw
             ],
@@ -190,7 +190,7 @@ export function SQLiteContextProvider({
                   where
                     measurement.name = 'pressure'
                     and device_id = ?
-                  order by measurement.timestamp
+                  order by measurement.timestamp desc
                 `,
                 [deviceId]
               )
