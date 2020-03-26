@@ -36,5 +36,5 @@ export const parseData = ({
     return null;
   });
 
-  return dataArray.filter(x => !!x);
+  return dataArray.filter(x => x != null) as data[];
 };

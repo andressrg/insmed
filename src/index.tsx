@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text, View, Button, SafeAreaView } from 'react-native';
+import { Text, View, Button, SafeAreaView, RefreshControl } from 'react-native';
 import { Dimensions } from 'react-native';
 import codePush from 'react-native-code-push';
 import {
@@ -43,7 +43,7 @@ function Measurements() {
   const dbContext = React.useContext(SQLiteContext);
 
   // @ts-ignore
-  const { data } = useAsync({
+  const { isPending: dataPending, data, reload: reloadData } = useAsync({
     promiseFn: dbContext.getMeasurements,
     deviceId: 1
   });
@@ -61,9 +61,11 @@ function Measurements() {
   );
 
   const rowRenderer = React.useCallback(
-    (_, row) => (
+    (_, row: { value: number; timestamp: number }) => (
       <View style={{ height: ROW_HEIGHT }}>
-        <Text>{row.value}</Text>
+        <Text>
+          T:{row.timestamp} Presion: {row.value}
+        </Text>
       </View>
     ),
     []
@@ -74,11 +76,17 @@ function Measurements() {
     [data]
   );
 
+  const refreshControl = React.useMemo(
+    () => <RefreshControl refreshing={dataPending} onRefresh={reloadData} />,
+    [dataPending, reloadData]
+  );
+
   return (data || []).length === 0 ? null : (
     <RecyclerListView
       layoutProvider={layoutProvider}
       dataProvider={dataProvider}
       rowRenderer={rowRenderer}
+      refreshControl={refreshControl}
     />
   );
 }
@@ -88,7 +96,7 @@ function HomeScreen() {
     <Measurements />
   ) : (
     <SafeAreaView style={{ flex: 1 }}>
-      {/* {selected <Chart />} */}
+      <Measurements />
     </SafeAreaView>
   );
 }
