@@ -42,6 +42,18 @@ export const SQLiteContext = React.createContext<{
       raw: string;
     }[]
   >;
+
+  insertMeasurements?: (
+    t: {
+      device_id: number;
+      timestamp: number;
+      external_timestamp: number;
+      type: string;
+      value: number;
+      raw: string;
+    }[]
+  ) => // ) => Promise<{ id: string }[]>;
+  Promise<void>;
 }>({});
 
 async function setupDb() {
@@ -195,6 +207,33 @@ export function SQLiteContextProvider({
                 [deviceId]
               )
             ),
+          [dbPromise.promise]
+        ),
+
+        insertMeasurements: React.useCallback(
+          async p => {
+            const { db } = await dbPromise.promise;
+
+            await db.executeSql(
+              `
+                INSERT INTO measurement (device_id, timestamp, external_timestamp, type, value, raw)
+                VALUES
+                  ${p.map(() => `(?, ?, ?, ?, ?, ?)`)};
+              `,
+              p.reduce(
+                (acc, row) => [
+                  ...acc,
+                  row.device_id,
+                  row.timestamp,
+                  row.external_timestamp,
+                  row.type,
+                  row.value,
+                  row.raw
+                ],
+                [] as any
+              )
+            );
+          },
           [dbPromise.promise]
         )
       }}
