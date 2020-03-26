@@ -7,7 +7,7 @@ import {
   ScrollView,
   SafeAreaView
 } from 'react-native';
-import { BleManager, Device } from 'react-native-ble-plx';
+import { Device } from 'react-native-ble-plx';
 import { Dimensions } from 'react-native';
 import { Permissions } from 'react-native-unimodules';
 import codePush from 'react-native-code-push';
@@ -23,6 +23,7 @@ import { useNavigation } from '@react-navigation/native';
 
 import { Chart } from './components/Chart';
 import { SQLiteContextProvider, SQLiteContext } from './components/SQLContext';
+import { BLEContextProvider, BLEContext } from './components/BLEContext';
 
 function useScreenDimensions() {
   const [screenData, setScreenData] = React.useState(Dimensions.get('screen'));
@@ -109,7 +110,8 @@ function DetailsScreen() {
 }
 
 function DeviceScanScreen() {
-  const [manager] = React.useState(() => new BleManager());
+  const bleContext = React.useContext(BLEContext);
+  const manager = bleContext.manager!;
 
   const [devices, setDevices] = React.useState<{
     [id: string]: { foundAt: Date; device: Device };
@@ -272,21 +274,23 @@ function MainStackScreen() {
 const AppWithContext = () => (
   <SQLiteContextProvider>
     <NavigationContainer>
-      <RootStack.Navigator mode="modal">
-        <RootStack.Screen
-          name="Main"
-          component={MainStackScreen}
-          options={{ headerShown: false }}
-        />
+      <BLEContextProvider>
+        <RootStack.Navigator mode="modal">
+          <RootStack.Screen
+            name="Main"
+            component={MainStackScreen}
+            options={{ headerShown: false }}
+          />
 
-        <RootStack.Screen
-          name="DeviceScan"
-          options={{
-            title: 'Dispositivos cercanos'
-          }}
-          component={DeviceScanScreen}
-        />
-      </RootStack.Navigator>
+          <RootStack.Screen
+            name="DeviceScan"
+            options={{
+              title: 'Dispositivos cercanos'
+            }}
+            component={DeviceScanScreen}
+          />
+        </RootStack.Navigator>
+      </BLEContextProvider>
     </NavigationContainer>
   </SQLiteContextProvider>
 );
