@@ -90,7 +90,7 @@ function Measurements() {
 function App() {
   const [manager] = React.useState(() => new BleManager());
 
-  const [findDevices, setFindDevices] = React.useState(false);
+  const [findDevices, setFindDevices] = React.useState(true);
 
   const [devices, setDevices] = React.useState<{
     [id: string]: { foundAt: Date; device: Device };
