@@ -1,7 +1,10 @@
 {
   "cSpell.words": [
+    "insmed",
+    "recyclerlistview",
     "uart",
     "unimodules"
   ],
-  "java.configuration.updateBuildConfiguration": "disabled"
+  "java.configuration.updateBuildConfiguration": "disabled",
+  "typescript.tsdk": "node_modules/typescript/lib"
 }
