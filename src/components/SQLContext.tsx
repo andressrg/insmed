@@ -63,6 +63,8 @@ async function setupDb() {
   const dbReady = results != null;
 
   if (!dbReady) {
+    db.executeSql(`PRAGMA foreign_keys = ON`);
+
     await db.transaction(async trx => {
       trx.executeSql(
         `
@@ -78,7 +80,8 @@ async function setupDb() {
         `
           CREATE TABLE IF NOT EXISTS device (
             id INTEGER PRIMARY KEY,
-            name TEXT NOT NULL
+            name TEXT NOT NULL,
+            created_at INTEGER NOT NULL
           );
         `
       );
@@ -87,8 +90,9 @@ async function setupDb() {
         `
           CREATE TABLE IF NOT EXISTS measurement (
             id INTEGER PRIMARY KEY,
-            timestamp INTEGER NOT NULL,
             device_id INTEGER NOT NULL,
+            timestamp INTEGER NOT NULL,
+            external_timestamp INTEGER NOT NULL,
             name TEXT NOT NULL,
             value REAL NOT NULL,
             raw TEXT NOT NULL,
@@ -109,9 +113,18 @@ async function setupDb() {
 
     if (__DEV__) {
       await db.transaction(async trx => {
+        trx.executeSql(
+          `
+            INSERT INTO device (id, name, created_at)
+            VALUES (?, ?, ?);
+          `,
+          [1, 'Test device', Date.now()]
+        );
+
         const values = Array.from(Array(100)).map(() => ({
           device_id: 1,
           timestamp: Date.now(),
+          external_timestamp: Date.now(),
           name: 'pressure',
           value: Math.random() * 70,
           raw: 'raw'
@@ -119,15 +132,16 @@ async function setupDb() {
 
         trx.executeSql(
           `
-            INSERT INTO measurement (device_id, timestamp, name, value, raw)
+            INSERT INTO measurement (device_id, timestamp, external_timestamp, name, value, raw)
             VALUES
-              ${values.map(() => `(?, ?, ?, ?, ?)`)};
+              ${values.map(() => `(?, ?, ?, ?, ?, ?)`)};
           `,
           values.reduce(
             (acc, row) => [
               ...acc,
               row.device_id,
               row.timestamp,
+              row.external_timestamp,
               row.name,
               row.value,
               row.raw
