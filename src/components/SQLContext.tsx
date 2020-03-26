@@ -106,7 +106,7 @@ async function setupDb() {
       trx.executeSql(
         `
           CREATE INDEX idx_measurement_device_type_timestamp_value
-          ON measurement (device_id, type, timestamp desc);
+          ON measurement (device_id, type, timestamp desc, value);
         `
       );
     });
