@@ -200,9 +200,10 @@ export function SQLiteContextProvider({
                   SELECT *
                   FROM measurement
                   where
-                    measurement.name = 'pressure'
+                    measurement.type = 'pressure'
                     and device_id = ?
                   order by measurement.timestamp desc
+                  limit 500
                 `,
                 [deviceId]
               )
