@@ -33,7 +33,6 @@ function CharacteristicConnection({
       const subscription = characteristic.monitor(async (err, char) => {
         if (char) {
           const decodedMessage = decode(char.value);
-          console.log('decodedMessage', decodedMessage);
           const data = parseData({ data: decodedMessage, cacheRef });
 
           data.length > 0 &&

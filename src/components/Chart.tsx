@@ -66,7 +66,6 @@ export function Chart({ data }: { data: { x: number; y: number }[] }) {
 
   const [timeCutoff, setTimeCutoff] = React.useState(time);
   React.useEffect(() => {
-    // console.log('currentTime', currentTime, 'prevTime', prevTimeRef.current);
     if (currentTime < prevTimeRef.current) {
       setTimeCutoff(time);
     }
@@ -75,8 +74,6 @@ export function Chart({ data }: { data: { x: number; y: number }[] }) {
   React.useEffect(() => {
     prevTimeRef.current = currentTime;
   });
-
-  console.log('currentTime', { startData, currentTime, timeCutoff, startTime });
 
   const calcData = React.useMemo(
     () =>
@@ -94,8 +91,6 @@ export function Chart({ data }: { data: { x: number; y: number }[] }) {
         })),
     [data, startTime]
   );
-
-  // console.log('calcData', calcData);
 
   return (
     <VictoryChart
