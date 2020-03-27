@@ -1,7 +1,6 @@
 import 'react-native';
 
 async function getLines({
-  cursor,
   wraparoundMillis,
   firstTsOfForeground,
   query
@@ -121,6 +120,27 @@ it('works', async () => {
   expect(
     await getLines({
       wraparoundMillis: WRAPAROUND_MILLIS,
+      query: async ({ cursor }) => ({
+        edges: [
+          { ts: baseTs, y: 1 },
+          { ts: baseTs + 10, y: 2 }
+        ]
+      })
+    })
+  ).toEqual(
+    expect.objectContaining({
+      background: [],
+      foreground: [
+        { x: 0, y: 1 },
+        { x: 10, y: 2 }
+      ],
+      firstTsOfForeground: baseTs
+    })
+  );
+
+  expect(
+    await getLines({
+      wraparoundMillis: WRAPAROUND_MILLIS,
       firstTsOfForeground: baseTs,
       query: async ({ cursor }) => ({
         edges: [
@@ -146,15 +166,18 @@ it('works', async () => {
     await getLines({
       wraparoundMillis: WRAPAROUND_MILLIS,
       firstTsOfForeground: baseTs,
-      query: async ({ cursor }) => ({
-        edges: [
-          { ts: baseTs - (WRAPAROUND_MILLIS + 10), y: 1 },
-          { ts: baseTs - (WRAPAROUND_MILLIS - 10), y: 2 },
-          { ts: baseTs, y: 3 },
-          { ts: baseTs + 10, y: 4 },
-          { ts: baseTs + WRAPAROUND_MILLIS + 10, y: 5 }
-        ]
-      })
+      query: async ({ cursor }) => {
+        expect(cursor).toEqual(baseTs - WRAPAROUND_MILLIS);
+        return {
+          edges: [
+            { ts: baseTs - (WRAPAROUND_MILLIS + 10), y: 1 },
+            { ts: baseTs - (WRAPAROUND_MILLIS - 10), y: 2 },
+            { ts: baseTs, y: 3 },
+            { ts: baseTs + 10, y: 4 },
+            { ts: baseTs + WRAPAROUND_MILLIS + 10, y: 5 }
+          ]
+        };
+      }
     })
   ).toEqual(
     expect.objectContaining({
