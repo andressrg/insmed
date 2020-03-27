@@ -4,12 +4,12 @@ async function getLines({
   cursor,
   wraparoundMillis,
   firstTsOfForeground,
-  fn
+  query
 }: {
   cursor?: string;
   wraparoundMillis: number;
   firstTsOfForeground?: number;
-  fn: (p: {
+  query: (p: {
     first: number;
     cursor?: number;
   }) => Promise<{
@@ -17,7 +17,7 @@ async function getLines({
     cursor?: string;
   }>;
 }) {
-  const { edges } = await fn({
+  const { edges } = await query({
     first: 500,
     cursor: firstTsOfForeground && firstTsOfForeground - wraparoundMillis
   });
@@ -75,7 +75,7 @@ it('works', async () => {
   expect(
     await getLines({
       wraparoundMillis: WRAPAROUND_MILLIS,
-      fn: async ({ cursor }) => ({ edges: [] })
+      query: async ({ cursor }) => ({ edges: [] })
     })
   ).toEqual(
     expect.objectContaining({
@@ -87,7 +87,7 @@ it('works', async () => {
   expect(
     await getLines({
       wraparoundMillis: WRAPAROUND_MILLIS,
-      fn: async ({ cursor }) => ({
+      query: async ({ cursor }) => ({
         edges: [{ ts: baseTs, y: 1 }]
       })
     })
@@ -102,7 +102,7 @@ it('works', async () => {
   expect(
     await getLines({
       wraparoundMillis: WRAPAROUND_MILLIS,
-      fn: async ({ cursor }) => ({
+      query: async ({ cursor }) => ({
         edges: [
           { ts: baseTs - (WRAPAROUND_MILLIS + 10), y: 1 },
           { ts: baseTs - (WRAPAROUND_MILLIS - 10), y: 2 },
@@ -122,7 +122,7 @@ it('works', async () => {
     await getLines({
       wraparoundMillis: WRAPAROUND_MILLIS,
       firstTsOfForeground: baseTs,
-      fn: async ({ cursor }) => ({
+      query: async ({ cursor }) => ({
         edges: [
           { ts: baseTs - (WRAPAROUND_MILLIS + 10), y: 1 },
           { ts: baseTs - (WRAPAROUND_MILLIS - 10), y: 2 },
@@ -146,7 +146,7 @@ it('works', async () => {
     await getLines({
       wraparoundMillis: WRAPAROUND_MILLIS,
       firstTsOfForeground: baseTs,
-      fn: async ({ cursor }) => ({
+      query: async ({ cursor }) => ({
         edges: [
           { ts: baseTs - (WRAPAROUND_MILLIS + 10), y: 1 },
           { ts: baseTs - (WRAPAROUND_MILLIS - 10), y: 2 },
