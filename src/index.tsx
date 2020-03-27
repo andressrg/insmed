@@ -7,6 +7,7 @@ import {
   DataProvider,
   LayoutProvider
 } from 'recyclerlistview';
+import { VictoryChart, VictoryLine, VictoryTheme } from 'victory-native';
 import { useAsync } from 'react-async';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
@@ -14,6 +15,7 @@ import { useNavigation } from '@react-navigation/native';
 
 import { SQLiteContextProvider, SQLiteContext } from './components/SQLContext';
 import { BLEContextProvider } from './components/BLEContext';
+import { getLines } from './utils/charts';
 
 import { DeviceScanScreen } from './screens/DeviceScan';
 
@@ -38,14 +40,17 @@ function useScreenDimensions() {
 
 const ROW_HEIGHT = 40;
 
+const WRAPAROUND_MILLIS = 0.5 * 60 * 1000;
+
 function Measurements() {
   const { width: screenWidth } = useScreenDimensions();
   const dbContext = React.useContext(SQLiteContext);
+  const deviceId = 1;
 
   // @ts-ignore
   const { isPending: dataPending, data, reload: reloadData } = useAsync({
     promiseFn: dbContext.getMeasurements,
-    deviceId: 1
+    deviceId
   });
 
   const layoutProvider = React.useMemo(
@@ -81,13 +86,81 @@ function Measurements() {
     [dataPending, reloadData]
   );
 
+  const [promise, setPromise] = React.useState<
+    Promise<{
+      background: { x: number; y: number }[];
+      foreground: { x: number; y: number }[];
+      firstTsOfForeground: number;
+    }>
+  >();
+
+  const getMeasurements = dbContext.getMeasurements!;
+  const { data: plotData } = useAsync({ promise });
+  const firstTsOfForegroundRef = React.useRef<number>();
+
+  React.useEffect(() => {
+    const key = setInterval(
+      () =>
+        setPromise(async () => {
+          const result = await getLines({
+            wraparoundMillis: WRAPAROUND_MILLIS,
+            firstTsOfForeground: firstTsOfForegroundRef.current,
+            query: async ({ cursor }) => ({
+              edges: (await getMeasurements({ deviceId, cursor }))
+                .reverse()
+                .map(r => ({
+                  ts: r.external_timestamp,
+                  y: r.value
+                }))
+            })
+          });
+
+          firstTsOfForegroundRef.current = result.firstTsOfForeground;
+
+          return result;
+        }),
+      1000
+    );
+
+    return () => clearInterval(key);
+  }, [getMeasurements]);
+
+  const foreground = plotData?.foreground;
+  const background = React.useMemo(
+    () =>
+      foreground == null
+        ? plotData?.background
+        : (plotData?.background ?? []).filter(
+            p => foreground[foreground.length - 1].x < p.x
+          ),
+    [foreground, plotData]
+  );
+
   return (data || []).length === 0 ? null : (
-    <RecyclerListView
-      layoutProvider={layoutProvider}
-      dataProvider={dataProvider}
-      rowRenderer={rowRenderer}
-      refreshControl={refreshControl}
-    />
+    <>
+      <VictoryChart
+        theme={VictoryTheme.material}
+        domainPadding={20}
+        domain={{ x: [0, WRAPAROUND_MILLIS] }}
+      >
+        <VictoryLine
+          style={{ data: { stroke: 'red' } }}
+          data={background ?? []}
+          // interpolation="natural"
+        />
+        <VictoryLine
+          data={foreground ?? []}
+          // interpolation="natural"
+        />
+      </VictoryChart>
+
+      <RecyclerListView
+        layoutProvider={layoutProvider}
+        dataProvider={dataProvider}
+        rowRenderer={rowRenderer}
+        refreshControl={refreshControl}
+      />
+    </>
   );
 }
 

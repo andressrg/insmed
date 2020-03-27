@@ -1,11 +1,6 @@
 import React from 'react';
 
-import {
-  // VictoryBar,
-  VictoryChart,
-  VictoryLine,
-  VictoryTheme
-} from 'victory-native';
+import { VictoryChart, VictoryLine, VictoryTheme } from 'victory-native';
 
 const X_DURATION = 0.5 * 60 * 1000;
 

@@ -33,10 +33,13 @@ async function runQuery<T>(conn, query, args?): Promise<T[]> {
 export const SQLiteContext = React.createContext<{
   getMeasurements?: (p: {
     deviceId;
+    first?: number;
+    cursor?: number;
   }) => Promise<
     {
       id: number;
       timestamp: number;
+      external_timestamp: number;
       name: string;
       value: number;
       raw: string;
@@ -186,11 +189,12 @@ export function SQLiteContextProvider({
     <SQLiteContext.Provider
       value={{
         getMeasurements: React.useCallback(
-          ({ deviceId }) =>
+          ({ deviceId, first = 500, cursor }) =>
             dbPromise.promise.then(({ db }) =>
               runQuery<{
                 id: number;
                 timestamp: number;
+                external_timestamp: number;
                 name: string;
                 value: number;
                 raw: string;
@@ -199,13 +203,16 @@ export function SQLiteContextProvider({
                 `
                   SELECT *
                   FROM measurement
+
                   where
                     measurement.type = 'pressure'
                     and device_id = ?
+                    ${cursor == null ? '' : 'and ? <= measurement.timestamp'}
+
                   order by measurement.timestamp desc
-                  limit 500
+                  limit ?
                 `,
-                [deviceId]
+                cursor == null ? [deviceId, first] : [deviceId, cursor, first]
               )
             ),
           [dbPromise.promise]

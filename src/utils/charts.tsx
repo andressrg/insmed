@@ -24,6 +24,8 @@ export async function getLines({
 
   const hasWraparound = wraparoundMillis < (lastTs ?? 0) - (firstTs ?? 0);
 
+  // console.log('hasWraparound', hasWraparound, edges);
+
   firstTsOfForeground =
     firstTsOfForeground != null
       ? firstTsOfForeground + wraparoundMillis < lastTs
