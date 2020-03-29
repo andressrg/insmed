@@ -116,7 +116,6 @@ function Measurements() {
               millis: r.external_timestamp,
               y: r.value
             }));
-
           const result = getLines({
             wraparoundMillis: WRAPAROUND_MILLIS,
             contextRef,
@@ -126,9 +125,7 @@ function Measurements() {
               y: p.raw.y
             }))
           });
-
           cursorRef.current = result.background[0]?.id;
-
           return result;
         }),
       1000

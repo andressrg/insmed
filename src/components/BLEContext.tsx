@@ -1,5 +1,5 @@
 import React from 'react';
-import { BleManager, Characteristic } from 'react-native-ble-plx';
+import { BleManager, Characteristic, Device } from 'react-native-ble-plx';
 import { decode } from 'base-64';
 
 import { SQLiteContext } from './SQLContext';
@@ -8,19 +8,22 @@ import { parseData } from '../utils';
 export const BLEContext = React.createContext<{
   manager?: BleManager;
   connectToCharacteristic?: ({
-    characteristic
+    characteristic,
+    device
   }: {
     characteristic: Characteristic;
+    device: Device;
   }) => Promise<void>;
 }>({});
 
 function CharacteristicConnection({
-  characteristic
+  characteristic,
+  deviceId
 }: {
   characteristic: Characteristic;
+  deviceId: number;
 }) {
   const context = React.useContext(SQLiteContext);
-
   const insertMeasurements = context.insertMeasurements!;
 
   const cacheRef = React.useRef('');
@@ -38,7 +41,7 @@ function CharacteristicConnection({
           data.length > 0 &&
             insertMeasurements(
               data.map(d => ({
-                device_id: 1,
+                device_id: deviceId,
                 timestamp: Date.now(),
                 external_timestamp: d.t,
                 type: 'pressure',
@@ -53,7 +56,7 @@ function CharacteristicConnection({
     })();
 
     return () => deactivators.forEach(fn => fn());
-  }, [characteristic, insertMeasurements]);
+  }, [characteristic, deviceId, insertMeasurements]);
 
   return null;
 }
@@ -65,8 +68,11 @@ export function BLEContextProvider({
 }) {
   const [manager] = React.useState(() => new BleManager());
 
+  const context = React.useContext(SQLiteContext);
+  const getOrCreateDevice = context.getOrCreateDevice!;
+
   const [characteristics, setCharacteristics] = React.useState<
-    Characteristic[]
+    { characteristic: Characteristic; deviceId: number }[]
   >([]);
 
   return (
@@ -74,14 +80,19 @@ export function BLEContextProvider({
       value={{
         manager,
         connectToCharacteristic: React.useCallback(
-          async ({ characteristic }) => {
+          async ({ characteristic, device }) => {
+            const { id } = await getOrCreateDevice({
+              hardware_id: device.id,
+              name: device.name
+            });
+
             setCharacteristics(state =>
-              state.includes(characteristic)
+              state.map(s => s.characteristic).includes(characteristic)
                 ? state
-                : [...state, characteristic]
+                : [...state, { characteristic, deviceId: id }]
             );
           },
-          []
+          [getOrCreateDevice]
         )
       }}
     >
@@ -89,8 +100,9 @@ export function BLEContextProvider({
 
       {characteristics.map(characteristic => (
         <CharacteristicConnection
-          key={characteristic.deviceID}
-          characteristic={characteristic}
+          key={characteristic.deviceId}
+          characteristic={characteristic.characteristic}
+          deviceId={characteristic.deviceId}
         />
       ))}
     </BLEContext.Provider>
