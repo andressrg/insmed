@@ -201,13 +201,18 @@ export function SQLiteContextProvider({
               }>(
                 db,
                 `
-                  SELECT *
+                  SELECT
+                    id,
+                    timestamp,
+                    external_timestamp,
+                    value
+
                   FROM measurement
 
                   where
                     measurement.type = 'pressure'
                     and device_id = ?
-                    ${cursor == null ? '' : 'and ? <= measurement.timestamp'}
+                    ${cursor == null ? '' : 'and ? <= measurement.id'}
 
                   order by measurement.timestamp desc
                   limit ?

@@ -15,7 +15,7 @@ import { useNavigation } from '@react-navigation/native';
 
 import { SQLiteContextProvider, SQLiteContext } from './components/SQLContext';
 import { BLEContextProvider } from './components/BLEContext';
-import { getLines } from './utils/charts';
+import { getLines, correctTs, initCorrectTsRef } from './utils/charts';
 
 import { DeviceScanScreen } from './screens/DeviceScan';
 
@@ -90,38 +90,49 @@ function Measurements() {
     Promise<{
       background: { x: number; y: number }[];
       foreground: { x: number; y: number }[];
-      firstTsOfForeground: number;
     }>
   >();
 
   const getMeasurements = dbContext.getMeasurements!;
   const { data: plotData } = useAsync({ promise });
-  const firstTsOfForegroundRef = React.useRef<number>();
+
+  const contextRef = React.useRef(initCorrectTsRef());
+  const cursorRef = React.useRef<number>();
 
   React.useEffect(() => {
     const key = setInterval(
       () =>
         setPromise(async () => {
-          const result = await getLines({
-            wraparoundMillis: WRAPAROUND_MILLIS,
-            firstTsOfForeground: firstTsOfForegroundRef.current,
-            query: async ({ cursor }) => ({
-              edges: (await getMeasurements({ deviceId, cursor }))
-                .reverse()
-                .map(r => ({
-                  ts: r.external_timestamp,
-                  y: r.value
-                }))
+          const data = (
+            await getMeasurements({
+              deviceId,
+              cursor: cursorRef.current
             })
+          )
+            .reverse()
+            .map(r => ({
+              id: r.id,
+              ts: r.timestamp,
+              millis: r.external_timestamp,
+              y: r.value
+            }));
+
+          const result = getLines({
+            wraparoundMillis: WRAPAROUND_MILLIS,
+            contextRef,
+            data: correctTs({ contextRef, data }).map(p => ({
+              ts: p.ts,
+              id: p.raw.id,
+              y: p.raw.y
+            }))
           });
 
-          firstTsOfForegroundRef.current = result.firstTsOfForeground;
+          cursorRef.current = result.background[0]?.id;
 
           return result;
         }),
       1000
     );
-
     return () => clearInterval(key);
   }, [getMeasurements]);
 
