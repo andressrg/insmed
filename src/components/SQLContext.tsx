@@ -168,17 +168,6 @@ async function setupDb() {
     }
   }
 
-  console.log(
-    'apisda',
-    await runQuery(
-      db,
-      `
-    select :lol
-  `,
-      { lol: 1 }
-    )
-  );
-
   // await SQLite.deleteDatabase(
   //   // @ts-ignore
   //   DATABASE_NAME

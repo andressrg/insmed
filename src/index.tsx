@@ -99,8 +99,6 @@ function Measurements() {
   const contextRef = React.useRef(initCorrectTsRef());
   const cursorRef = React.useRef<number>();
 
-  console.log('cursorRef.current', cursorRef.current);
-
   React.useEffect(() => {
     const key = setInterval(
       () =>
