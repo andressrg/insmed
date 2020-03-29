@@ -168,10 +168,21 @@ async function setupDb() {
     }
   }
 
-  // await SQLite.deleteDatabase(
-  //   // @ts-ignore
-  //   DATABASE_NAME
-  // );
+  console.log(
+    'apisda',
+    await runQuery(
+      db,
+      `
+    select :lol
+  `,
+      { lol: 1 }
+    )
+  );
+
+  await SQLite.deleteDatabase(
+    // @ts-ignore
+    DATABASE_NAME
+  );
 
   return { db };
 }
@@ -201,7 +212,17 @@ export function SQLiteContextProvider({
               }>(
                 db,
                 `
-                  SELECT *
+                  --with previous_measurement as (
+--
+                  --)
+
+                  SELECT
+                    id,
+                    timestamp,
+                    external_timestamp,
+                    timestamp_corrected,
+                    value
+
                   FROM measurement
 
                   where

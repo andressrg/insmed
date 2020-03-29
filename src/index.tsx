@@ -15,7 +15,7 @@ import { useNavigation } from '@react-navigation/native';
 
 import { SQLiteContextProvider, SQLiteContext } from './components/SQLContext';
 import { BLEContextProvider } from './components/BLEContext';
-import { getLines } from './utils/charts';
+import { getLines, correctTs, initCorrectTsRef } from './utils/charts';
 
 import { DeviceScanScreen } from './screens/DeviceScan';
 
@@ -98,6 +98,8 @@ function Measurements() {
   const { data: plotData } = useAsync({ promise });
   const firstTsOfForegroundRef = React.useRef<number>();
 
+  const contextRef = React.useRef(initCorrectTsRef());
+
   React.useEffect(() => {
     const key = setInterval(
       () =>
@@ -105,23 +107,22 @@ function Measurements() {
           const result = await getLines({
             wraparoundMillis: WRAPAROUND_MILLIS,
             firstTsOfForeground: firstTsOfForegroundRef.current,
+            contextRef,
             query: async ({ cursor }) => ({
               edges: (await getMeasurements({ deviceId, cursor }))
                 .reverse()
                 .map(r => ({
-                  ts: r.external_timestamp,
+                  ts: r.timestamp,
+                  millis: r.external_timestamp,
                   y: r.value
                 }))
             })
           });
-
           firstTsOfForegroundRef.current = result.firstTsOfForeground;
-
           return result;
         }),
       1000
     );
-
     return () => clearInterval(key);
   }, [getMeasurements]);
 
