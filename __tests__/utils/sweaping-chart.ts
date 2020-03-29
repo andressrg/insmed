@@ -13,45 +13,45 @@ it('corrects ts', () => {
     correctTs({
       contextRef,
       data: [
-        { ts: 100, millis: 0, y: 1 },
-        { ts: 100, millis: 1, y: 2 },
-        { ts: 110, millis: 2, y: 3 },
-        { ts: 110, millis: 0, y: 4 },
-        { ts: 120, millis: 1, y: 5 }
+        { id: 1, ts: 100, millis: 0, y: 1 },
+        { id: 2, ts: 100, millis: 1, y: 2 },
+        { id: 3, ts: 110, millis: 2, y: 3 },
+        { id: 4, ts: 110, millis: 0, y: 4 },
+        { id: 5, ts: 120, millis: 1, y: 5 }
       ]
     })
   ).toEqual([
-    { ts: 100, y: 1 },
-    { ts: 101, y: 2 },
-    { ts: 102, y: 3 },
-    { ts: 110, y: 4 },
-    { ts: 111, y: 5 }
+    { ts: 100, raw: expect.objectContaining({ y: 1 }) },
+    { ts: 101, raw: expect.objectContaining({ y: 2 }) },
+    { ts: 102, raw: expect.objectContaining({ y: 3 }) },
+    { ts: 110, raw: expect.objectContaining({ y: 4 }) },
+    { ts: 111, raw: expect.objectContaining({ y: 5 }) }
   ]);
 
   expect(
     correctTs({
       contextRef,
       data: [
-        { ts: 130, millis: 2, y: 6 },
-        { ts: 130, millis: 3, y: 7 },
-        { ts: 140, millis: 0, y: 8 }
+        { id: 6, ts: 130, millis: 2, y: 6 },
+        { id: 7, ts: 130, millis: 3, y: 7 },
+        { id: 8, ts: 140, millis: 0, y: 8 }
       ]
     })
   ).toEqual([
-    { ts: 112, y: 6 },
-    { ts: 113, y: 7 },
-    { ts: 140, y: 8 }
+    { ts: 112, raw: expect.objectContaining({ y: 6 }) },
+    { ts: 113, raw: expect.objectContaining({ y: 7 }) },
+    { ts: 140, raw: expect.objectContaining({ y: 8 }) }
   ]);
 });
 
-it('empty', async () => {
-  const contextRef = { current: {} };
+it('divides front and back lines', async () => {
+  const baseTs = Date.now();
 
   expect(
-    await getLines({
+    getLines({
       wraparoundMillis: WRAPAROUND_MILLIS,
-      contextRef,
-      query: async ({ cursor }) => ({ edges: [] })
+      contextRef: { current: initCorrectTsRef() },
+      data: []
     })
   ).toEqual(
     expect.objectContaining({
@@ -59,143 +59,100 @@ it('empty', async () => {
       foreground: []
     })
   );
-});
-
-it('works 3', async () => {
-  const baseTs = Date.now();
-  const contextRef = { current: initCorrectTsRef() };
 
   expect(
-    await getLines({
+    getLines({
       wraparoundMillis: WRAPAROUND_MILLIS,
-      contextRef,
-      query: async ({ cursor }) => ({
-        edges: [{ ts: baseTs, millis: 100, y: 1 }]
-      })
+      contextRef: { current: initCorrectTsRef() },
+      data: [{ ts: baseTs, y: 1, id: 1 }]
     })
   ).toEqual(
     expect.objectContaining({
       background: [],
-      foreground: [{ x: 0, y: 1 }],
-      firstTsOfForeground: baseTs
+      foreground: [{ x: 0, y: 1, id: 1 }]
     })
   );
 
-  expect(contextRef.current).toEqual(expect.objectContaining({}));
-});
-
-it('works 2', async () => {
-  const baseTs = Date.now();
-  const contextRef = { current: initCorrectTsRef() };
-
   expect(
-    await getLines({
+    getLines({
       wraparoundMillis: WRAPAROUND_MILLIS,
-      contextRef,
-      query: async ({ cursor }) => ({
-        edges: [
-          { ts: baseTs - (WRAPAROUND_MILLIS + 10), millis: 0, y: 1 },
-          { ts: baseTs - (WRAPAROUND_MILLIS - 10), millis: 20, y: 2 },
-          { ts: baseTs, millis: WRAPAROUND_MILLIS + 10, y: 3 }
-        ]
-      })
+      contextRef: { current: initCorrectTsRef() },
+      data: [
+        { ts: baseTs - (WRAPAROUND_MILLIS + 10), y: 1, id: 1 },
+        { ts: baseTs - (WRAPAROUND_MILLIS - 10), y: 2, id: 2 },
+        { ts: baseTs, y: 3, id: 3 }
+      ]
     })
   ).toEqual(
     expect.objectContaining({
-      background: [{ x: 10, y: 2 }],
-      foreground: [{ x: 0, y: 3 }],
-      firstTsOfForeground: baseTs
+      background: [{ x: 10, y: 2, id: 2 }],
+      foreground: [{ x: 0, y: 3, id: 3 }]
+    })
+  );
+
+  expect(
+    getLines({
+      wraparoundMillis: WRAPAROUND_MILLIS,
+      contextRef: { current: initCorrectTsRef() },
+      data: [
+        { ts: baseTs, y: 1, id: 1 },
+        { ts: baseTs + 10, y: 2, id: 2 }
+      ]
+    })
+  ).toEqual(
+    expect.objectContaining({
+      background: [],
+      foreground: [
+        { x: 0, y: 1, id: 1 },
+        { x: 10, y: 2, id: 2 }
+      ]
+    })
+  );
+
+  expect(
+    getLines({
+      wraparoundMillis: WRAPAROUND_MILLIS,
+      contextRef: {
+        current: { ...initCorrectTsRef(), firstTsOfForeground: baseTs }
+      },
+      data: [
+        { ts: baseTs - (WRAPAROUND_MILLIS + 10), y: 1, id: 1 },
+        { ts: baseTs - (WRAPAROUND_MILLIS - 10), y: 2, id: 2 },
+        { ts: baseTs, y: 3, id: 3 },
+        { ts: baseTs + 10, y: 4, id: 4 }
+      ]
+    })
+  ).toEqual(
+    expect.objectContaining({
+      background: [{ x: 10, y: 2, id: 2 }],
+      foreground: [
+        { x: 0, y: 3, id: 3 },
+        { x: 10, y: 4, id: 4 }
+      ]
+    })
+  );
+
+  expect(
+    getLines({
+      wraparoundMillis: WRAPAROUND_MILLIS,
+      contextRef: {
+        current: { ...initCorrectTsRef(), firstTsOfForeground: baseTs }
+      },
+      data: [
+        { ts: baseTs - (WRAPAROUND_MILLIS + 10), y: 1, id: 1 },
+        { ts: baseTs - (WRAPAROUND_MILLIS - 10), y: 2, id: 2 },
+        { ts: baseTs, y: 3, id: 3 },
+        { ts: baseTs + 10, y: 4, id: 4 },
+        { ts: baseTs + WRAPAROUND_MILLIS + 10, y: 5, id: 5 }
+      ]
+    })
+  ).toEqual(
+    expect.objectContaining({
+      background: [
+        { x: 0, y: 3, id: 3 },
+        { x: 10, y: 4, id: 4 }
+      ],
+      foreground: [{ x: 10, y: 5, id: 5 }]
     })
   );
 });
-
-// it('works 2', async () => {
-//   const baseTs = Date.now();
-//   const contextRef = { current: {} };
-
-//   expect(
-//     await getLines({
-//       wraparoundMillis: WRAPAROUND_MILLIS,
-//       contextRef,
-//       query: async ({ cursor }) => ({
-//         edges: [
-//           { ts: baseTs, y: 1 },
-//           { ts: baseTs + 10, y: 2 }
-//         ]
-//       })
-//     })
-//   ).toEqual(
-//     expect.objectContaining({
-//       background: [],
-//       foreground: [
-//         { x: 0, y: 1 },
-//         { x: 10, y: 2 }
-//       ],
-//       firstTsOfForeground: baseTs
-//     })
-//   );
-// });
-
-// it('works 2', async () => {
-//   const baseTs = Date.now();
-//   const contextRef = { current: {} };
-
-//   expect(
-//     await getLines({
-//       wraparoundMillis: WRAPAROUND_MILLIS,
-//       contextRef,
-//       firstTsOfForeground: baseTs,
-//       query: async ({ cursor }) => ({
-//         edges: [
-//           { ts: baseTs - (WRAPAROUND_MILLIS + 10), y: 1 },
-//           { ts: baseTs - (WRAPAROUND_MILLIS - 10), y: 2 },
-//           { ts: baseTs, y: 3 },
-//           { ts: baseTs + 10, y: 4 }
-//         ]
-//       })
-//     })
-//   ).toEqual(
-//     expect.objectContaining({
-//       background: [{ x: 10, y: 2 }],
-//       foreground: [
-//         { x: 0, y: 3 },
-//         { x: 10, y: 4 }
-//       ],
-//       firstTsOfForeground: baseTs
-//     })
-//   );
-// });
-
-// it('works 2', async () => {
-//   const baseTs = Date.now();
-//   const contextRef = { current: {} };
-
-//   expect(
-//     await getLines({
-//       wraparoundMillis: WRAPAROUND_MILLIS,
-//       contextRef,
-//       firstTsOfForeground: baseTs,
-//       query: async ({ cursor }) => {
-//         expect(cursor).toEqual(baseTs - WRAPAROUND_MILLIS);
-//         return {
-//           edges: [
-//             { ts: baseTs - (WRAPAROUND_MILLIS + 10), y: 1 },
-//             { ts: baseTs - (WRAPAROUND_MILLIS - 10), y: 2 },
-//             { ts: baseTs, y: 3 },
-//             { ts: baseTs + 10, y: 4 },
-//             { ts: baseTs + WRAPAROUND_MILLIS + 10, y: 5 }
-//           ]
-//         };
-//       }
-//     })
-//   ).toEqual(
-//     expect.objectContaining({
-//       background: [
-//         { x: 0, y: 3 },
-//         { x: 10, y: 4 }
-//       ],
-//       foreground: [{ x: 10, y: 5 }],
-//       firstTsOfForeground: baseTs + WRAPAROUND_MILLIS
-//     })
-//   );
-// });

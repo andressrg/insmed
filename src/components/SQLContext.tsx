@@ -179,10 +179,10 @@ async function setupDb() {
     )
   );
 
-  await SQLite.deleteDatabase(
-    // @ts-ignore
-    DATABASE_NAME
-  );
+  // await SQLite.deleteDatabase(
+  //   // @ts-ignore
+  //   DATABASE_NAME
+  // );
 
   return { db };
 }
@@ -212,15 +212,10 @@ export function SQLiteContextProvider({
               }>(
                 db,
                 `
-                  --with previous_measurement as (
---
-                  --)
-
                   SELECT
                     id,
                     timestamp,
                     external_timestamp,
-                    timestamp_corrected,
                     value
 
                   FROM measurement
@@ -228,7 +223,7 @@ export function SQLiteContextProvider({
                   where
                     measurement.type = 'pressure'
                     and device_id = ?
-                    ${cursor == null ? '' : 'and ? <= measurement.timestamp'}
+                    ${cursor == null ? '' : 'and ? <= measurement.id'}
 
                   order by measurement.timestamp desc
                   limit ?
