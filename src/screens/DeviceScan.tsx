@@ -145,7 +145,7 @@ export function DeviceScanScreen() {
   React.useEffect(() => {
     const uartCharacteristic = deviceValidationAsync.data?.uartCharacteristic;
     const device = deviceValidationAsync.data?.device;
-    if (uartCharacteristic != null) {
+    if (uartCharacteristic != null && device != null) {
       connectToCharacteristic({ characteristic: uartCharacteristic, device });
       navigation.goBack();
     }
