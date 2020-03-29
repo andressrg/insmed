@@ -43,8 +43,6 @@ const validateDevice: DeferFn<
     deviceId: string;
   } = args[0];
 
-  console.log('deviceId', deviceId);
-
   await manager.connectToDevice(deviceId);
 
   if (signal.aborted) {
