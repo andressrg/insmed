@@ -78,15 +78,7 @@ function HomeScreen() {
   );
 
   const dataProvider = React.useMemo(
-    () =>
-      new DataProvider((r1, r2) => r1 !== r2).cloneWithRows([
-        ...(devices || []),
-        ...(devices || []),
-        ...(devices || []),
-        ...(devices || []),
-        ...(devices || []),
-        ...(devices || [])
-      ]),
+    () => new DataProvider((r1, r2) => r1 !== r2).cloneWithRows(devices || []),
     [devices]
   );
 
