@@ -35,11 +35,13 @@ export function IMText({
 export function ListItem({
   height = ROW_HEIGHT,
   title,
-  subtitle
+  subtitle,
+  onPress
 }: {
   height?: number;
   title: string;
   subtitle?: string;
+  onPress?: () => void;
 }) {
   return (
     <TouchableOpacity
@@ -57,6 +59,7 @@ export function ListItem({
         alignItems: 'center'
       }}
       activeOpacity={0.3}
+      onPress={onPress}
     >
       <View>
         <IMText>{title}</IMText>
