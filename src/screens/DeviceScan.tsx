@@ -188,16 +188,6 @@ export function DeviceScanScreen() {
                   );
                 }}
               />
-
-              // <React.Fragment >
-              //   <TouchableOpacity
-              //     disabled={deviceValidationAsync.isPending}
-              //   >
-              //     <Text>{device.name}</Text>
-              //   </TouchableOpacity>
-
-              //   <View style={{ height: 10 }} />
-              // </React.Fragment>
             ))}
         </ScrollView>
       )}
