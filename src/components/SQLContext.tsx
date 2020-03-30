@@ -1,6 +1,6 @@
 import React from 'react';
 import SQLite from 'react-native-sqlite-storage';
-import { useAsync } from 'react-async';
+import { useAsync, AsyncState } from 'react-async';
 
 const DATABASE_NAME = 'insmed.db';
 const DATABASE_VERSION = '1.0';
@@ -59,6 +59,14 @@ export const SQLiteContext = React.createContext<{
   Promise<void>;
 
   getDevices?: () => Promise<
+    {
+      id: number;
+      hardware_id: string;
+      name: string;
+    }[]
+  >;
+
+  devicesAsync?: AsyncState<
     {
       id: number;
       hardware_id: string;
@@ -207,6 +215,34 @@ export function SQLiteContextProvider({
     promiseFn: setupDb
   });
 
+  const getDevices = React.useCallback(
+    () =>
+      dbPromise.promise.then(({ db }) =>
+        runQuery<{
+          id: number;
+          hardware_id: string;
+          name: string;
+        }>(
+          db,
+          `
+            SELECT
+              id,
+              hardware_id,
+              name
+
+            FROM device
+
+            order by device.name
+          `
+        )
+      ),
+    [dbPromise.promise]
+  );
+
+  const devicesAsync = useAsync({
+    promiseFn: getDevices
+  });
+
   return (
     <SQLiteContext.Provider
       value={{
@@ -245,29 +281,9 @@ export function SQLiteContextProvider({
           [dbPromise.promise]
         ),
 
-        getDevices: React.useCallback(
-          () =>
-            dbPromise.promise.then(({ db }) =>
-              runQuery<{
-                id: number;
-                hardware_id: string;
-                name: string;
-              }>(
-                db,
-                `
-                  SELECT
-                    id,
-                    hardware_id,
-                    name
+        getDevices,
 
-                  FROM device
-
-                  order by device.name
-                `
-              )
-            ),
-          [dbPromise.promise]
-        ),
+        devicesAsync,
 
         insertMeasurements: React.useCallback(
           async p => {
@@ -323,9 +339,11 @@ export function SQLiteContextProvider({
                   .then(result => result[0].insertId as number)
             );
 
+            await devicesAsync.reload();
+
             return { id: deviceId };
           },
-          [dbPromise.promise]
+          [dbPromise.promise, devicesAsync]
         )
       }}
     >

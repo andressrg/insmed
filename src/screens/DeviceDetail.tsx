@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text, View, RefreshControl } from 'react-native';
+import { RefreshControl } from 'react-native';
 import {
   RecyclerListView,
   DataProvider,
@@ -42,11 +42,7 @@ export function DeviceDetailScreen({ route }) {
 
   const rowRenderer = React.useCallback(
     (_, row: { value: number; timestamp: number }) => (
-      <View style={{ height: ROW_HEIGHT }}>
-        <Text>
-          T:{row.timestamp} Presion: {row.value}
-        </Text>
-      </View>
+      <ListItem title={row.value} subtitle={row.timestamp} />
     ),
     []
   );
