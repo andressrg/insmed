@@ -1,13 +1,11 @@
 import React from 'react';
-import { Text, View, Button, SafeAreaView, RefreshControl } from 'react-native';
-import { Dimensions } from 'react-native';
+import { View, Button, SafeAreaView, RefreshControl } from 'react-native';
 import codePush from 'react-native-code-push';
 import {
   RecyclerListView,
   DataProvider,
   LayoutProvider
 } from 'recyclerlistview';
-import { VictoryChart, VictoryLine, VictoryTheme } from 'victory-native';
 import { useAsync } from 'react-async';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
@@ -15,42 +13,24 @@ import { useNavigation } from '@react-navigation/native';
 
 import { SQLiteContextProvider, SQLiteContext } from './components/SQLContext';
 import { BLEContextProvider } from './components/BLEContext';
-import { getLines, correctTs, initCorrectTsRef } from './utils/charts';
+import { ROW_HEIGHT, ListItem } from './components/UI';
+import { useScreenDimensions } from './components/useScreenDimensions';
 
 import { DeviceScanScreen } from './screens/DeviceScan';
+import { DeviceDetailScreen } from './screens/DeviceDetail';
 
-function useScreenDimensions() {
-  const [screenData, setScreenData] = React.useState(Dimensions.get('screen'));
-
-  React.useEffect(() => {
-    const onChange = result => {
-      setScreenData(result.screen);
-    };
-
-    Dimensions.addEventListener('change', onChange);
-
-    return () => Dimensions.removeEventListener('change', onChange);
-  });
-
-  return {
-    ...screenData,
-    isLandscape: screenData.width > screenData.height
-  };
-}
-
-const ROW_HEIGHT = 40;
-
-const WRAPAROUND_MILLIS = 0.5 * 60 * 1000;
-
-function Measurements() {
+function DevicesListScreen() {
   const { width: screenWidth } = useScreenDimensions();
   const dbContext = React.useContext(SQLiteContext);
-  const deviceId = 1;
+  const navigation = useNavigation();
 
-  // @ts-ignore
-  const { isPending: dataPending, data, reload: reloadData } = useAsync({
-    promiseFn: dbContext.getMeasurements,
-    deviceId
+  const getDevices = dbContext.getDevices!;
+  const {
+    data: devices,
+    isPending: devicesPending,
+    reload: devicesReload
+  } = useAsync({
+    promiseFn: React.useCallback(() => getDevices(), [getDevices])
   });
 
   const layoutProvider = React.useMemo(
@@ -66,130 +46,41 @@ function Measurements() {
   );
 
   const rowRenderer = React.useCallback(
-    (_, row: { value: number; timestamp: number }) => (
-      <View style={{ height: ROW_HEIGHT }}>
-        <Text>
-          T:{row.timestamp} Presion: {row.value}
-        </Text>
-      </View>
+    (_, row) => (
+      <ListItem
+        title={row.name}
+        subtitle={row.hardware_id}
+        onPress={() =>
+          navigation.navigate('DeviceDetail', { deviceId: row.id })
+        }
+      />
     ),
-    []
+    [navigation]
   );
 
   const dataProvider = React.useMemo(
-    () => new DataProvider((r1, r2) => r1 !== r2).cloneWithRows(data || []),
-    [data]
+    () => new DataProvider((r1, r2) => r1 !== r2).cloneWithRows(devices || []),
+    [devices]
   );
 
   const refreshControl = React.useMemo(
-    () => <RefreshControl refreshing={dataPending} onRefresh={reloadData} />,
-    [dataPending, reloadData]
+    () => (
+      <RefreshControl refreshing={devicesPending} onRefresh={devicesReload} />
+    ),
+    [devicesPending, devicesReload]
   );
 
-  const [promise, setPromise] = React.useState<
-    Promise<{
-      background: { x: number; y: number }[];
-      foreground: { x: number; y: number }[];
-    }>
-  >();
-
-  const getMeasurements = dbContext.getMeasurements!;
-  const { data: plotData } = useAsync({ promise });
-
-  const contextRef = React.useRef(initCorrectTsRef());
-  const cursorRef = React.useRef<number>();
-
-  React.useEffect(() => {
-    const key = setInterval(
-      () =>
-        setPromise(async () => {
-          const data = (
-            await getMeasurements({
-              deviceId,
-              cursor: cursorRef.current
-            })
-          )
-            .reverse()
-            .map(r => ({
-              id: r.id,
-              ts: r.timestamp,
-              millis: r.external_timestamp,
-              y: r.value
-            }));
-
-          const result = getLines({
-            wraparoundMillis: WRAPAROUND_MILLIS,
-            contextRef,
-            data: correctTs({ contextRef, data }).map(p => ({
-              ts: p.ts,
-              id: p.raw.id,
-              y: p.raw.y
-            }))
-          });
-
-          cursorRef.current = result.background[0]?.id;
-
-          return result;
-        }),
-      1000
-    );
-    return () => clearInterval(key);
-  }, [getMeasurements]);
-
-  const foreground = plotData?.foreground;
-  const background = React.useMemo(
-    () =>
-      foreground == null
-        ? plotData?.background
-        : (plotData?.background ?? []).filter(
-            p => foreground[foreground.length - 1].x < p.x
-          ),
-    [foreground, plotData]
-  );
-
-  return (data || []).length === 0 ? null : (
-    <>
-      <VictoryChart
-        theme={VictoryTheme.material}
-        domainPadding={20}
-        domain={{ x: [0, WRAPAROUND_MILLIS] }}
-      >
-        <VictoryLine
-          style={{ data: { stroke: 'red' } }}
-          data={background ?? []}
-          // interpolation="natural"
-        />
-        <VictoryLine
-          data={foreground ?? []}
-          // interpolation="natural"
-        />
-      </VictoryChart>
-
-      <RecyclerListView
-        layoutProvider={layoutProvider}
-        dataProvider={dataProvider}
-        rowRenderer={rowRenderer}
-        refreshControl={refreshControl}
-      />
-    </>
-  );
-}
-
-function HomeScreen() {
-  return false ? (
-    <Measurements />
-  ) : (
-    <SafeAreaView style={{ flex: 1 }}>
-      <Measurements />
-    </SafeAreaView>
-  );
-}
-
-function DetailsScreen() {
   return (
-    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-      <Text>Details Screen</Text>
-    </View>
+    <SafeAreaView style={{ flex: 1 }}>
+      {devices && (
+        <RecyclerListView
+          layoutProvider={layoutProvider}
+          dataProvider={dataProvider}
+          rowRenderer={rowRenderer}
+          refreshControl={refreshControl}
+        />
+      )}
+    </SafeAreaView>
   );
 }
 
@@ -203,9 +94,9 @@ function MainStackScreen() {
     <MainStack.Navigator initialRouteName="Home">
       <MainStack.Screen
         name="Home"
-        component={HomeScreen}
+        component={DevicesListScreen}
         options={{
-          title: 'Dispositivos conectados',
+          title: 'Dispositivos',
 
           headerRight: () => (
             <View style={{ paddingRight: 10 }}>
@@ -217,8 +108,6 @@ function MainStackScreen() {
           )
         }}
       />
-
-      <MainStack.Screen name="Details" component={DetailsScreen} />
     </MainStack.Navigator>
   );
 }
@@ -240,6 +129,14 @@ const AppWithContext = () => (
               title: 'Dispositivos cercanos'
             }}
             component={DeviceScanScreen}
+          />
+
+          <RootStack.Screen
+            name="DeviceDetail"
+            options={{
+              title: 'Dispositivo'
+            }}
+            component={DeviceDetailScreen}
           />
         </RootStack.Navigator>
       </BLEContextProvider>

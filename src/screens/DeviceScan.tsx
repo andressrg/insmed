@@ -30,18 +30,13 @@ export function multiline(text?: string) {
 
 const validateDevice: DeferFn<
   | {
-      deviceId: string;
+      device: import('react-native-ble-plx').Device;
       uartCharacteristic?: import('react-native-ble-plx').Characteristic;
     }
   | undefined
 > = async (args, _, { signal }) => {
-  const {
-    manager,
-    deviceId
-  }: {
-    manager: import('react-native-ble-plx').BleManager;
-    deviceId: string;
-  } = args[0];
+  const { manager, device } = args[0];
+  const deviceId = device.id;
 
   await manager.connectToDevice(deviceId);
 
@@ -50,7 +45,7 @@ const validateDevice: DeferFn<
     return;
   }
 
-  const device = await manager.discoverAllServicesAndCharacteristicsForDevice(
+  const deviceWithCharacteristics = await manager.discoverAllServicesAndCharacteristicsForDevice(
     deviceId
   );
 
@@ -59,7 +54,7 @@ const validateDevice: DeferFn<
     return;
   }
 
-  const services = await device.services();
+  const services = await deviceWithCharacteristics.services();
 
   if (signal.aborted) {
     manager.cancelDeviceConnection(deviceId);
@@ -80,7 +75,7 @@ const validateDevice: DeferFn<
   );
 
   return {
-    deviceId,
+    device,
     uartCharacteristic
   };
 };
@@ -149,8 +144,9 @@ export function DeviceScanScreen() {
 
   React.useEffect(() => {
     const uartCharacteristic = deviceValidationAsync.data?.uartCharacteristic;
-    if (uartCharacteristic != null) {
-      connectToCharacteristic({ characteristic: uartCharacteristic });
+    const device = deviceValidationAsync.data?.device;
+    if (uartCharacteristic != null && device != null) {
+      connectToCharacteristic({ characteristic: uartCharacteristic, device });
       navigation.goBack();
     }
   }, [connectToCharacteristic, deviceValidationAsync.data, navigation]);
@@ -173,7 +169,7 @@ export function DeviceScanScreen() {
                   onPress={() => {
                     deviceValidationAsync.run({
                       manager,
-                      deviceId: device.id
+                      device
                     });
                   }}
                 >

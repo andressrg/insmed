@@ -57,9 +57,22 @@ export const SQLiteContext = React.createContext<{
     }[]
   ) => // ) => Promise<{ id: string }[]>;
   Promise<void>;
+
+  getDevices?: () => Promise<
+    {
+      id: number;
+      hardware_id: string;
+      name: string;
+    }[]
+  >;
+
+  getOrCreateDevice?: (p: {
+    hardware_id: string;
+    name: string;
+  }) => Promise<{ id }>;
 }>({});
 
-async function setupDb() {
+async function setupDb(): Promise<{ db }> {
   await SQLite.echoTest();
 
   const db = await SQLite.openDatabase(
@@ -70,14 +83,22 @@ async function setupDb() {
     DATABASE_SIZE
   );
 
-  const [results] =
-    ((await db
-      .executeSql('SELECT * FROM version LIMIT 1')
-      .catch(() => null)) as [{ rows: { item; length } }] | null) ?? [];
+  const dbStatus = await runQuery<{ version_id: number }>(
+    db,
+    ` SELECT * FROM version LIMIT 1`
+  ).then(
+    rows => rows[0] ?? null,
+    () => null
+  );
 
-  const dbReady = results != null;
+  if (dbStatus && dbStatus.version_id < 2) {
+    await SQLite.deleteDatabase(
+      // @ts-ignore
+      DATABASE_NAME
+    );
 
-  if (!dbReady) {
+    return setupDb();
+  } else if (dbStatus == null) {
     db.executeSql(`PRAGMA foreign_keys = ON`);
 
     await db.transaction(async trx => {
@@ -89,12 +110,13 @@ async function setupDb() {
         `
       );
 
-      trx.executeSql('INSERT INTO version (version_id) values (1);');
+      trx.executeSql('INSERT INTO version (version_id) values (2);');
 
       trx.executeSql(
         `
           CREATE TABLE IF NOT EXISTS device (
             id INTEGER PRIMARY KEY,
+            hardware_id TEXT NOT NULL UNIQUE,
             name TEXT NOT NULL,
             created_at INTEGER NOT NULL
           );
@@ -126,46 +148,46 @@ async function setupDb() {
       );
     });
 
-    if (__DEV__) {
-      await db.transaction(async trx => {
-        trx.executeSql(
-          `
-            INSERT INTO device (id, name, created_at)
-            VALUES (?, ?, ?);
-          `,
-          [1, 'Test device', Date.now()]
-        );
+    // if (__DEV__) {
+    //   await db.transaction(async trx => {
+    //     trx.executeSql(
+    //       `
+    //         INSERT INTO device (id, name, created_at)
+    //         VALUES (?, ?, ?);
+    //       `,
+    //       [1, 'Test device', Date.now()]
+    //     );
 
-        const values = Array.from(Array(100)).map(() => ({
-          device_id: 1,
-          timestamp: Date.now(),
-          external_timestamp: Date.now(),
-          type: 'pressure',
-          value: Math.random() * 70,
-          raw: 'raw'
-        }));
+    //     const values = Array.from(Array(100)).map(() => ({
+    //       device_id: 1,
+    //       timestamp: Date.now(),
+    //       external_timestamp: Date.now(),
+    //       type: 'pressure',
+    //       value: Math.random() * 70,
+    //       raw: 'raw'
+    //     }));
 
-        trx.executeSql(
-          `
-            INSERT INTO measurement (device_id, timestamp, external_timestamp, type, value, raw)
-            VALUES
-              ${values.map(() => `(?, ?, ?, ?, ?, ?)`)};
-          `,
-          values.reduce(
-            (acc, row) => [
-              ...acc,
-              row.device_id,
-              row.timestamp,
-              row.external_timestamp,
-              row.type,
-              row.value,
-              row.raw
-            ],
-            [] as any
-          )
-        );
-      });
-    }
+    //     trx.executeSql(
+    //       `
+    //         INSERT INTO measurement (device_id, timestamp, external_timestamp, type, value, raw)
+    //         VALUES
+    //           ${values.map(() => `(?, ?, ?, ?, ?, ?)`)};
+    //       `,
+    //       values.reduce(
+    //         (acc, row) => [
+    //           ...acc,
+    //           row.device_id,
+    //           row.timestamp,
+    //           row.external_timestamp,
+    //           row.type,
+    //           row.value,
+    //           row.raw
+    //         ],
+    //         [] as any
+    //       )
+    //     );
+    //   });
+    // }
   }
 
   // await SQLite.deleteDatabase(
@@ -223,6 +245,30 @@ export function SQLiteContextProvider({
           [dbPromise.promise]
         ),
 
+        getDevices: React.useCallback(
+          () =>
+            dbPromise.promise.then(({ db }) =>
+              runQuery<{
+                id: number;
+                hardware_id: string;
+                name: string;
+              }>(
+                db,
+                `
+                  SELECT
+                    id,
+                    hardware_id,
+                    name
+
+                  FROM device
+
+                  order by device.name
+                `
+              )
+            ),
+          [dbPromise.promise]
+        ),
+
         insertMeasurements: React.useCallback(
           async p => {
             const { db } = await dbPromise.promise;
@@ -246,6 +292,38 @@ export function SQLiteContextProvider({
                 [] as any
               )
             );
+          },
+          [dbPromise.promise]
+        ),
+
+        getOrCreateDevice: React.useCallback(
+          async p => {
+            const { db } = await dbPromise.promise;
+
+            const deviceId = await runQuery<{ id: number }>(
+              db,
+              `
+                select id
+                from device
+                where
+                  device.hardware_id = ?
+              `,
+              [p.hardware_id]
+            ).then(
+              rows =>
+                rows[0]?.id ??
+                db
+                  .executeSql(
+                    `
+                      INSERT INTO device (hardware_id, name, created_at)
+                      VALUES (?, ?, ?)
+                    `,
+                    [p.hardware_id, p.name, Date.now()]
+                  )
+                  .then(result => result[0].insertId as number)
+            );
+
+            return { id: deviceId };
           },
           [dbPromise.promise]
         )
