@@ -16,6 +16,7 @@ import { useNavigation } from '@react-navigation/native';
 import { SQLiteContextProvider, SQLiteContext } from './components/SQLContext';
 import { BLEContextProvider } from './components/BLEContext';
 import { getLines, correctTs, initCorrectTsRef } from './utils/charts';
+import { ROW_HEIGHT, ListItem } from './components/UI';
 
 import { DeviceScanScreen } from './screens/DeviceScan';
 
@@ -37,8 +38,6 @@ function useScreenDimensions() {
     isLandscape: screenData.width > screenData.height
   };
 }
-
-const ROW_HEIGHT = 40;
 
 const WRAPAROUND_MILLIS = 0.5 * 60 * 1000;
 
@@ -173,11 +172,67 @@ function Measurements() {
 }
 
 function HomeScreen() {
-  return false ? (
-    <Measurements />
-  ) : (
+  const { width: screenWidth } = useScreenDimensions();
+  const dbContext = React.useContext(SQLiteContext);
+
+  const getDevices = dbContext.getDevices!;
+  const {
+    data: devices,
+    isPending: devicesPending,
+    reload: devicesReload
+  } = useAsync({
+    promiseFn: React.useCallback(() => getDevices(), [getDevices])
+  });
+
+  const layoutProvider = React.useMemo(
+    () =>
+      new LayoutProvider(
+        _ => 0,
+        (_, dim) => {
+          dim.width = screenWidth;
+          dim.height = ROW_HEIGHT;
+        }
+      ),
+    [screenWidth]
+  );
+
+  const rowRenderer = React.useCallback(
+    (_, row) => <ListItem title={row.name} subtitle={row.hardware_id} />,
+    []
+  );
+
+  const dataProvider = React.useMemo(
+    () =>
+      new DataProvider((r1, r2) => r1 !== r2).cloneWithRows([
+        ...(devices || []),
+        ...(devices || []),
+        ...(devices || []),
+        ...(devices || []),
+        ...(devices || []),
+        ...(devices || [])
+      ]),
+    [devices]
+  );
+
+  const refreshControl = React.useMemo(
+    () => (
+      <RefreshControl refreshing={devicesPending} onRefresh={devicesReload} />
+    ),
+    [devicesPending, devicesReload]
+  );
+
+  return (
     <SafeAreaView style={{ flex: 1 }}>
-      <Measurements />
+      {/* <Measurements /> */}
+
+      {devices && (
+        <RecyclerListView
+          layoutProvider={layoutProvider}
+          dataProvider={dataProvider}
+          rowRenderer={rowRenderer}
+          refreshControl={refreshControl}
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -202,7 +257,7 @@ function MainStackScreen() {
         name="Home"
         component={HomeScreen}
         options={{
-          title: 'Dispositivos conectados',
+          title: 'Dispositivos',
 
           headerRight: () => (
             <View style={{ paddingRight: 10 }}>

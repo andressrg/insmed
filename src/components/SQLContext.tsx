@@ -58,6 +58,14 @@ export const SQLiteContext = React.createContext<{
   ) => // ) => Promise<{ id: string }[]>;
   Promise<void>;
 
+  getDevices?: () => Promise<
+    {
+      id: number;
+      hardware_id: string;
+      name: string;
+    }[]
+  >;
+
   getOrCreateDevice?: (p: {
     hardware_id: string;
     name: string;
@@ -232,6 +240,30 @@ export function SQLiteContextProvider({
                   limit ?
                 `,
                 cursor == null ? [deviceId, first] : [deviceId, cursor, first]
+              )
+            ),
+          [dbPromise.promise]
+        ),
+
+        getDevices: React.useCallback(
+          () =>
+            dbPromise.promise.then(({ db }) =>
+              runQuery<{
+                id: number;
+                hardware_id: string;
+                name: string;
+              }>(
+                db,
+                `
+                  SELECT
+                    id,
+                    hardware_id,
+                    name
+
+                  FROM device
+
+                  order by device.name
+                `
               )
             ),
           [dbPromise.promise]
