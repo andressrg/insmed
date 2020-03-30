@@ -1,6 +1,5 @@
 import React from 'react';
 import { Text, View, RefreshControl } from 'react-native';
-import { Dimensions } from 'react-native';
 import {
   RecyclerListView,
   DataProvider,
@@ -8,38 +7,20 @@ import {
 } from 'recyclerlistview';
 import { VictoryChart, VictoryLine, VictoryTheme } from 'victory-native';
 import { useAsync } from 'react-async';
-import { useNavigation } from '@react-navigation/native';
 
 import { SQLiteContext } from '../components/SQLContext';
+import { useScreenDimensions } from '../components/useScreenDimensions';
 // import { BLEContextProvider } from '../components/BLEContext';
 import { getLines, correctTs, initCorrectTsRef } from '../utils/charts';
 import { ROW_HEIGHT, ListItem } from '../components/UI';
 
-function useScreenDimensions() {
-  const [screenData, setScreenData] = React.useState(Dimensions.get('screen'));
-
-  React.useEffect(() => {
-    const onChange = result => {
-      setScreenData(result.screen);
-    };
-
-    Dimensions.addEventListener('change', onChange);
-
-    return () => Dimensions.removeEventListener('change', onChange);
-  });
-
-  return {
-    ...screenData,
-    isLandscape: screenData.width > screenData.height
-  };
-}
-
 const WRAPAROUND_MILLIS = 0.5 * 60 * 1000;
 
-export function DeviceDetailScreen() {
+export function DeviceDetailScreen({ route }) {
   const { width: screenWidth } = useScreenDimensions();
   const dbContext = React.useContext(SQLiteContext);
-  const deviceId = 1;
+
+  const { deviceId } = route.params;
 
   // @ts-ignore
   const { isPending: dataPending, data, reload: reloadData } = useAsync({
@@ -125,7 +106,7 @@ export function DeviceDetailScreen() {
       1000
     );
     return () => clearInterval(key);
-  }, [getMeasurements]);
+  }, [deviceId, getMeasurements]);
 
   const foreground = plotData?.foreground;
   const background = React.useMemo(

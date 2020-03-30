@@ -1,6 +1,5 @@
 import React from 'react';
-import { Text, View, Button, SafeAreaView, RefreshControl } from 'react-native';
-import { Dimensions } from 'react-native';
+import { View, Button, SafeAreaView, RefreshControl } from 'react-native';
 import codePush from 'react-native-code-push';
 import {
   RecyclerListView,
@@ -15,30 +14,12 @@ import { useNavigation } from '@react-navigation/native';
 import { SQLiteContextProvider, SQLiteContext } from './components/SQLContext';
 import { BLEContextProvider } from './components/BLEContext';
 import { ROW_HEIGHT, ListItem } from './components/UI';
+import { useScreenDimensions } from './components/useScreenDimensions';
 
 import { DeviceScanScreen } from './screens/DeviceScan';
 import { DeviceDetailScreen } from './screens/DeviceDetail';
 
-function useScreenDimensions() {
-  const [screenData, setScreenData] = React.useState(Dimensions.get('screen'));
-
-  React.useEffect(() => {
-    const onChange = result => {
-      setScreenData(result.screen);
-    };
-
-    Dimensions.addEventListener('change', onChange);
-
-    return () => Dimensions.removeEventListener('change', onChange);
-  });
-
-  return {
-    ...screenData,
-    isLandscape: screenData.width > screenData.height
-  };
-}
-
-function HomeScreen() {
+function DevicesListScreen() {
   const { width: screenWidth } = useScreenDimensions();
   const dbContext = React.useContext(SQLiteContext);
   const navigation = useNavigation();
@@ -91,8 +72,6 @@ function HomeScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
-      {/* <Measurements /> */}
-
       {devices && (
         <RecyclerListView
           layoutProvider={layoutProvider}
@@ -102,14 +81,6 @@ function HomeScreen() {
         />
       )}
     </SafeAreaView>
-  );
-}
-
-function DetailsScreen() {
-  return (
-    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-      <Text>Details Screen</Text>
-    </View>
   );
 }
 
@@ -123,7 +94,7 @@ function MainStackScreen() {
     <MainStack.Navigator initialRouteName="Home">
       <MainStack.Screen
         name="Home"
-        component={HomeScreen}
+        component={DevicesListScreen}
         options={{
           title: 'Dispositivos',
 
@@ -137,8 +108,6 @@ function MainStackScreen() {
           )
         }}
       />
-
-      <MainStack.Screen name="Details" component={DetailsScreen} />
     </MainStack.Navigator>
   );
 }
