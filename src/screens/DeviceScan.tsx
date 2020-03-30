@@ -10,10 +10,10 @@ import {
 import { Device } from 'react-native-ble-plx';
 import { useNavigation } from '@react-navigation/native';
 import { Permissions } from 'react-native-unimodules';
-
-import { useAsync, DeferFn } from 'react-async';
+import { useAsync } from 'react-async';
 
 import { BLEContext } from '../components/BLEContext';
+import { ListItem } from '../components/UI';
 
 // const UART_SERVICE_UUID = '0000FFE0-0000-1000-8000-00805F9B34FB';
 const UART_CHARACTERISTIC_UUID = '0000FFE1-0000-1000-8000-00805F9B34FB';
@@ -28,14 +28,17 @@ export function multiline(text?: string) {
     );
 }
 
-const validateDevice: DeferFn<
+async function validateDevice({
+  device,
+  manager,
+  signal
+}): Promise<
   | {
       device: import('react-native-ble-plx').Device;
       uartCharacteristic?: import('react-native-ble-plx').Characteristic;
     }
   | undefined
-> = async (args, _, { signal }) => {
-  const { manager, device } = args[0];
+> {
   const deviceId = device.id;
 
   await manager.connectToDevice(deviceId);
@@ -78,7 +81,7 @@ const validateDevice: DeferFn<
     device,
     uartCharacteristic
   };
-};
+}
 
 export function DeviceScanScreen() {
   const bleContext = React.useContext(BLEContext);
@@ -86,7 +89,10 @@ export function DeviceScanScreen() {
   const connectToCharacteristic = bleContext.connectToCharacteristic!;
   const navigation = useNavigation();
 
-  const deviceValidationAsync = useAsync({ deferFn: validateDevice });
+  const [selectDevicePromise, setSelectDevicePromise] = React.useState<
+    Promise<void>
+  >();
+  const deviceValidationAsync = useAsync({ promise: selectDevicePromise });
 
   const [devices, setDevices] = React.useState<{
     [id: string]: { foundAt: Date; device: Device };
@@ -142,42 +148,56 @@ export function DeviceScanScreen() {
     return () => deactivators.forEach(fn => fn());
   }, [manager]);
 
-  React.useEffect(() => {
-    const uartCharacteristic = deviceValidationAsync.data?.uartCharacteristic;
-    const device = deviceValidationAsync.data?.device;
-    if (uartCharacteristic != null && device != null) {
-      connectToCharacteristic({ characteristic: uartCharacteristic, device });
-      navigation.goBack();
-    }
-  }, [connectToCharacteristic, deviceValidationAsync.data, navigation]);
-
   return (
     <SafeAreaView style={{ flex: 1 }}>
-      <View style={{ height: 20 }} />
-
       {deviceValidationAsync.isPending ? (
-        <ActivityIndicator />
+        <View
+          style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
+        >
+          <ActivityIndicator />
+        </View>
       ) : (
-        <ScrollView contentContainerStyle={{ alignItems: 'center' }}>
+        <ScrollView>
           {Object.values(devices)
             .filter(({ device }) => device.name != null)
             .sort((a, b) => ('' + a.device.name).localeCompare(b.device.name!))
             .map(({ device }) => (
-              <React.Fragment key={device.id}>
-                <TouchableOpacity
-                  disabled={deviceValidationAsync.isPending}
-                  onPress={() => {
-                    deviceValidationAsync.run({
+              <ListItem
+                key={device.id}
+                title={device.name}
+                onPress={() => {
+                  const controller = new AbortController();
+                  setSelectDevicePromise(() =>
+                    validateDevice({
                       manager,
-                      device
-                    });
-                  }}
-                >
-                  <Text>{device.name}</Text>
-                </TouchableOpacity>
+                      device,
+                      signal: controller.signal
+                    }).then(async result => {
+                      const uartCharacteristic = result?.uartCharacteristic;
+                      const device = result?.device;
 
-                <View style={{ height: 10 }} />
-              </React.Fragment>
+                      if (uartCharacteristic != null && device != null) {
+                        await connectToCharacteristic({
+                          characteristic: uartCharacteristic,
+                          device
+                        });
+
+                        navigation.goBack();
+                      }
+                    })
+                  );
+                }}
+              />
+
+              // <React.Fragment >
+              //   <TouchableOpacity
+              //     disabled={deviceValidationAsync.isPending}
+              //   >
+              //     <Text>{device.name}</Text>
+              //   </TouchableOpacity>
+
+              //   <View style={{ height: 10 }} />
+              // </React.Fragment>
             ))}
         </ScrollView>
       )}

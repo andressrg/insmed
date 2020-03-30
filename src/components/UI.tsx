@@ -39,8 +39,8 @@ export function ListItem({
   onPress
 }: {
   height?: number;
-  title: string;
-  subtitle?: string;
+  title: React.ReactNode;
+  subtitle?: React.ReactNode;
   onPress?: () => void;
 }) {
   return (
@@ -58,8 +58,9 @@ export function ListItem({
         flexDirection: 'row',
         alignItems: 'center'
       }}
-      activeOpacity={0.3}
+      activeOpacity={onPress && 0.3}
       onPress={onPress}
+      disabled={onPress == null}
     >
       <View>
         <IMText>{title}</IMText>

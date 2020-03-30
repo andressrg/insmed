@@ -6,7 +6,6 @@ import {
   DataProvider,
   LayoutProvider
 } from 'recyclerlistview';
-import { useAsync } from 'react-async';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { useNavigation } from '@react-navigation/native';
@@ -24,14 +23,11 @@ function DevicesListScreen() {
   const dbContext = React.useContext(SQLiteContext);
   const navigation = useNavigation();
 
-  const getDevices = dbContext.getDevices!;
   const {
     data: devices,
     isPending: devicesPending,
     reload: devicesReload
-  } = useAsync({
-    promiseFn: React.useCallback(() => getDevices(), [getDevices])
-  });
+  } = dbContext.devicesAsync!;
 
   const layoutProvider = React.useMemo(
     () =>
