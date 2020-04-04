@@ -1,84 +1,16 @@
 import React from 'react';
-import { View, Button, SafeAreaView, RefreshControl } from 'react-native';
+import { View, Button } from 'react-native';
 import codePush from 'react-native-code-push';
-import {
-  RecyclerListView,
-  DataProvider,
-  LayoutProvider
-} from 'recyclerlistview';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { useNavigation } from '@react-navigation/native';
 
-import { SQLiteContextProvider, SQLiteContext } from './components/SQLContext';
+import { SQLiteContextProvider } from './components/SQLContext';
 import { BLEContextProvider } from './components/BLEContext';
-import { ROW_HEIGHT, ListItem } from './components/UI';
-import { useScreenDimensions } from './components/useScreenDimensions';
 
+import { DevicesListScreen } from './screens/DevicesListScreen';
 import { DeviceScanScreen } from './screens/DeviceScan';
 import { DeviceDetailScreen } from './screens/DeviceDetail';
-
-function DevicesListScreen() {
-  const { width: screenWidth } = useScreenDimensions();
-  const dbContext = React.useContext(SQLiteContext);
-  const navigation = useNavigation();
-
-  const {
-    data: devices,
-    isPending: devicesPending,
-    reload: devicesReload
-  } = dbContext.devicesAsync!;
-
-  const layoutProvider = React.useMemo(
-    () =>
-      new LayoutProvider(
-        _ => 0,
-        (_, dim) => {
-          dim.width = screenWidth;
-          dim.height = ROW_HEIGHT;
-        }
-      ),
-    [screenWidth]
-  );
-
-  const rowRenderer = React.useCallback(
-    (_, row) => (
-      <ListItem
-        title={row.name}
-        subtitle={row.hardware_id}
-        onPress={() =>
-          navigation.navigate('DeviceDetail', { deviceId: row.id })
-        }
-      />
-    ),
-    [navigation]
-  );
-
-  const dataProvider = React.useMemo(
-    () => new DataProvider((r1, r2) => r1 !== r2).cloneWithRows(devices || []),
-    [devices]
-  );
-
-  const refreshControl = React.useMemo(
-    () => (
-      <RefreshControl refreshing={devicesPending} onRefresh={devicesReload} />
-    ),
-    [devicesPending, devicesReload]
-  );
-
-  return (
-    <SafeAreaView style={{ flex: 1 }}>
-      {devices && (
-        <RecyclerListView
-          layoutProvider={layoutProvider}
-          dataProvider={dataProvider}
-          rowRenderer={rowRenderer}
-          refreshControl={refreshControl}
-        />
-      )}
-    </SafeAreaView>
-  );
-}
 
 const MainStack = createStackNavigator();
 const RootStack = createStackNavigator();
@@ -101,7 +33,7 @@ function MainStackScreen() {
                 title="Buscar"
               />
             </View>
-          )
+          ),
         }}
       />
     </MainStack.Navigator>
@@ -122,7 +54,7 @@ const AppWithContext = () => (
           <RootStack.Screen
             name="DeviceScan"
             options={{
-              title: 'Dispositivos cercanos'
+              title: 'Dispositivos cercanos',
             }}
             component={DeviceScanScreen}
           />
@@ -130,7 +62,7 @@ const AppWithContext = () => (
           <RootStack.Screen
             name="DeviceDetail"
             options={{
-              title: 'Dispositivo'
+              title: 'Dispositivo',
             }}
             component={DeviceDetailScreen}
           />
@@ -145,5 +77,5 @@ export default __DEV__
   : codePush({
       checkFrequency: codePush.CheckFrequency.ON_APP_RESUME,
       updateDialog: {},
-      installMode: codePush.InstallMode.IMMEDIATE
+      installMode: codePush.InstallMode.IMMEDIATE,
     })(AppWithContext);

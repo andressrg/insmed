@@ -7,18 +7,21 @@ import { parseData } from '../utils';
 
 export const BLEContext = React.createContext<{
   manager?: BleManager;
+
   connectToCharacteristic?: ({
     characteristic,
-    device
+    device,
   }: {
     characteristic: Characteristic;
     device: Device;
   }) => Promise<void>;
+
+  connectedDeviceIds?: { [k: string]: true };
 }>({});
 
 function CharacteristicConnection({
   characteristic,
-  deviceId
+  deviceId,
 }: {
   characteristic: Characteristic;
   deviceId: number;
@@ -40,13 +43,13 @@ function CharacteristicConnection({
 
           data.length > 0 &&
             insertMeasurements(
-              data.map(d => ({
+              data.map((d) => ({
                 device_id: deviceId,
                 timestamp: Date.now(),
                 external_timestamp: d.t,
                 type: 'pressure',
                 value: d.p,
-                raw: ''
+                raw: '',
               }))
             );
         }
@@ -55,14 +58,14 @@ function CharacteristicConnection({
       deactivators.push(() => subscription.remove());
     })();
 
-    return () => deactivators.forEach(fn => fn());
+    return () => deactivators.forEach((fn) => fn());
   }, [characteristic, deviceId, insertMeasurements]);
 
   return null;
 }
 
 export function BLEContextProvider({
-  children
+  children,
 }: {
   children: React.ReactNode;
 }) {
@@ -79,26 +82,36 @@ export function BLEContextProvider({
     <BLEContext.Provider
       value={{
         manager,
+
         connectToCharacteristic: React.useCallback(
           async ({ characteristic, device }) => {
             const { id } = await getOrCreateDevice({
               hardware_id: device.id,
-              name: device.name
+              name: device.name,
             });
 
-            setCharacteristics(state =>
-              state.map(s => s.characteristic).includes(characteristic)
+            setCharacteristics((state) =>
+              state.map((s) => s.characteristic).includes(characteristic)
                 ? state
                 : [...state, { characteristic, deviceId: id }]
             );
           },
           [getOrCreateDevice]
-        )
+        ),
+
+        connectedDeviceIds: React.useMemo(
+          () =>
+            characteristics.reduce(
+              (acc, d) => ({ ...acc, [d.deviceId]: true }),
+              {} as { [k: string]: true }
+            ),
+          [characteristics]
+        ),
       }}
     >
       {children}
 
-      {characteristics.map(characteristic => (
+      {characteristics.map((characteristic) => (
         <CharacteristicConnection
           key={characteristic.deviceId}
           characteristic={characteristic.characteristic}
