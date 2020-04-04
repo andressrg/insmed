@@ -3,7 +3,7 @@ import { RefreshControl } from 'react-native';
 import {
   RecyclerListView,
   DataProvider,
-  LayoutProvider
+  LayoutProvider,
 } from 'recyclerlistview';
 import { VictoryChart, VictoryLine, VictoryTheme } from 'victory-native';
 import { useAsync } from 'react-async';
@@ -25,13 +25,13 @@ export function DeviceDetailScreen({ route }) {
   // @ts-ignore
   const { isPending: dataPending, data, reload: reloadData } = useAsync({
     promiseFn: dbContext.getMeasurements,
-    deviceId
+    deviceId,
   });
 
   const layoutProvider = React.useMemo(
     () =>
       new LayoutProvider(
-        _ => 0,
+        (_) => 0,
         (_, dim) => {
           dim.width = screenWidth;
           dim.height = ROW_HEIGHT;
@@ -65,42 +65,53 @@ export function DeviceDetailScreen({ route }) {
   >();
 
   const getMeasurements = dbContext.getMeasurements!;
-  const { data: plotData } = useAsync({ promise });
+  const { data: plotData, isPending: plotDataPending } = useAsync({ promise });
 
   const contextRef = React.useRef(initCorrectTsRef());
   const cursorRef = React.useRef<number>();
 
+  const pendingRef = React.useRef(plotDataPending);
   React.useEffect(() => {
-    const key = setInterval(
-      () =>
-        setPromise(async () => {
-          const data = (
-            await getMeasurements({
-              deviceId,
-              cursor: cursorRef.current
-            })
-          )
-            .reverse()
-            .map(r => ({
-              id: r.id,
-              ts: r.timestamp,
-              millis: r.external_timestamp,
-              y: r.value
-            }));
-          const result = getLines({
-            wraparoundMillis: WRAPAROUND_MILLIS,
-            contextRef,
-            data: correctTs({ contextRef, data }).map(p => ({
-              ts: p.ts,
-              id: p.raw.id,
-              y: p.raw.y
-            }))
-          });
-          cursorRef.current = result.background[0]?.id;
-          return result;
-        }),
-      1000
-    );
+    pendingRef.current = plotDataPending;
+  });
+
+  React.useEffect(() => {
+    const key = setInterval(() => {
+      if (pendingRef.current) return;
+
+      setPromise(async () => {
+        const data = (
+          await getMeasurements({
+            deviceId,
+            cursor: cursorRef.current,
+          })
+        )
+          .reverse()
+          .map((r) => ({
+            id: r.id,
+            ts: r.timestamp,
+            millis: r.external_timestamp,
+            y: r.value,
+          }));
+
+        console.log('data.length', data.length);
+
+        const result = getLines({
+          wraparoundMillis: WRAPAROUND_MILLIS,
+          contextRef,
+          data: correctTs({ contextRef, data }).map((p) => ({
+            ts: p.ts,
+            id: p.raw.id,
+            y: p.raw.y,
+          })),
+        });
+
+        cursorRef.current =
+          result.background[0]?.id ?? result.foreground[0]?.id;
+
+        return result;
+      });
+    }, 1000);
     return () => clearInterval(key);
   }, [deviceId, getMeasurements]);
 
@@ -110,7 +121,7 @@ export function DeviceDetailScreen({ route }) {
       foreground == null
         ? plotData?.background
         : (plotData?.background ?? []).filter(
-            p => foreground[foreground.length - 1].x < p.x
+            (p) => foreground[foreground.length - 1].x < p.x
           ),
     [foreground, plotData]
   );

@@ -18,12 +18,12 @@ interface BasePoint {
 
 export function correctTs<T extends BasePoint>({
   contextRef,
-  data
+  data,
 }: {
   contextRef: { current: IContext };
   data: T[];
 }): { ts: number; raw: T }[] {
-  return data.map(p => {
+  return data.map((p) => {
     if (
       contextRef.current.offset < 0 ||
       (contextRef.current.prevMillis > 0 &&
@@ -41,7 +41,7 @@ export function correctTs<T extends BasePoint>({
 export function getLines({
   data,
   contextRef,
-  wraparoundMillis
+  wraparoundMillis,
 }: {
   wraparoundMillis: number;
   contextRef: { current: IContext };
@@ -74,24 +74,24 @@ export function getLines({
   return {
     background: (hasWraparound
       ? data.filter(
-          p =>
+          (p) =>
             contextRef.current.firstTsOfForeground! - wraparoundMillis <=
               p.ts && p.ts < contextRef.current.firstTsOfForeground!
         )
       : []
-    ).map(p => ({
+    ).map((p) => ({
       id: p.id,
       x: (p.ts - offset) % wraparoundMillis,
-      y: p.y
+      y: p.y,
     })),
 
     foreground: (hasWraparound
-      ? data.filter(p => contextRef.current.firstTsOfForeground! <= p.ts)
+      ? data.filter((p) => contextRef.current.firstTsOfForeground! <= p.ts)
       : data
-    ).map(p => ({
+    ).map((p) => ({
       id: p.id,
       x: (p.ts - offset) % wraparoundMillis,
-      y: p.y
-    }))
+      y: p.y,
+    })),
   };
 }
