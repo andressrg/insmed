@@ -22,7 +22,7 @@ import { getLines, correctTs, initCorrectTsRef } from '../utils/charts';
 import { ROW_HEIGHT, ListItem } from '../components/UI';
 import { usePromise } from '../components/usePromise';
 
-const WRAPAROUND_MILLIS = 0.5 * 60 * 1000;
+const WRAPAROUND_MILLIS = 1 * 60 * 1000;
 
 export function DeviceDetailScreen({ route }) {
   const dbContext = React.useContext(SQLiteContext);
@@ -70,6 +70,7 @@ export function DeviceDetailScreen({ route }) {
             await getMeasurements({
               deviceId,
               cursor: cursorRef.current,
+              first: 2000,
             })
           )
             .reverse()
@@ -143,7 +144,7 @@ export function DeviceDetailScreen({ route }) {
               domain={{ x: [0, WRAPAROUND_MILLIS] }}
               height={viewSize.height}
               width={viewSize.width}
-              // padding={0}
+              padding={{ left: 50 }}
               // style={{
               //   // parent: { flex: 1, backgroundColor: 'red', display: 'flex' },
               //   parent: { backgroundColor: 'red' },
