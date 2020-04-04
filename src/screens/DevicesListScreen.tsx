@@ -18,6 +18,10 @@ export function DevicesListScreen() {
   const bleContext = React.useContext(BLEContext);
   const navigation = useNavigation();
 
+  React.useEffect(() => {
+    navigation.navigate('DeviceDetail', { deviceId: 1 });
+  }, []);
+
   const connectedDeviceIds = bleContext.connectedDeviceIds!;
 
   const {

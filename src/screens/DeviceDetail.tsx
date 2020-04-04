@@ -7,6 +7,7 @@ import {
 } from 'recyclerlistview';
 import { VictoryChart, VictoryLine, VictoryTheme } from 'victory-native';
 import { useAsync } from 'react-async';
+import * as ScreenOrientation from 'expo-screen-orientation';
 
 import { SQLiteContext } from '../components/SQLContext';
 import { useScreenDimensions } from '../components/useScreenDimensions';
@@ -21,6 +22,16 @@ export function DeviceDetailScreen({ route }) {
   const dbContext = React.useContext(SQLiteContext);
 
   const { deviceId } = route.params;
+
+  React.useEffect(() => {
+    ScreenOrientation.lockAsync(
+      ScreenOrientation.OrientationLock.LANDSCAPE_LEFT
+    );
+
+    return () => {
+      ScreenOrientation.unlockAsync();
+    };
+  }, []);
 
   // @ts-ignore
   const { isPending: dataPending, data, reload: reloadData } = useAsync({
