@@ -63,6 +63,7 @@ const AppWithContext = () => (
             name="DeviceDetail"
             options={{
               title: 'Dispositivo',
+              headerShown: false,
             }}
             component={DeviceDetailScreen}
           />
