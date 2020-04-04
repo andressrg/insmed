@@ -1,5 +1,5 @@
 import React from 'react';
-import { RefreshControl, View } from 'react-native';
+import { RefreshControl, View, TouchableOpacity } from 'react-native';
 import {
   RecyclerListView,
   DataProvider,
@@ -13,6 +13,8 @@ import {
 } from 'victory-native';
 import { useAsync } from 'react-async';
 import * as ScreenOrientation from 'expo-screen-orientation';
+import Icon from 'react-native-vector-icons/AntDesign';
+import { useNavigation } from '@react-navigation/native';
 
 import { SQLiteContext } from '../components/SQLContext';
 import { useScreenDimensions } from '../components/useScreenDimensions';
@@ -24,6 +26,8 @@ const WRAPAROUND_MILLIS = 0.5 * 60 * 1000;
 
 export function DeviceDetailScreen({ route }) {
   const dbContext = React.useContext(SQLiteContext);
+
+  const navigation = useNavigation();
 
   const { deviceId } = route.params;
 
@@ -159,6 +163,29 @@ export function DeviceDetailScreen({ route }) {
             </VictoryChart>
           </View>
         )}
+
+        <View
+          style={{
+            position: 'absolute',
+            top: 0,
+            right: 0,
+            zIndex: 9999,
+          }}
+        >
+          <TouchableOpacity
+            onPress={() => {
+              navigation.goBack();
+            }}
+            style={{ padding: 10 }}
+          >
+            <Icon
+              name="close"
+              size={20}
+              backgroundColor="transparent"
+              color="black"
+            />
+          </TouchableOpacity>
+        </View>
       </View>
     </>
   );
