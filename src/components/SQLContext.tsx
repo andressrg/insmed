@@ -95,7 +95,7 @@ async function setupDb(): Promise<{ db }> {
     db,
     ` SELECT * FROM version LIMIT 1`
   ).then(
-    rows => rows[0] ?? null,
+    (rows) => rows[0] ?? null,
     () => null
   );
 
@@ -109,7 +109,7 @@ async function setupDb(): Promise<{ db }> {
   } else if (dbStatus == null) {
     db.executeSql(`PRAGMA foreign_keys = ON`);
 
-    await db.transaction(async trx => {
+    await db.transaction(async (trx) => {
       trx.executeSql(
         `
           CREATE TABLE IF NOT EXISTS version(
@@ -207,12 +207,12 @@ async function setupDb(): Promise<{ db }> {
 }
 
 export function SQLiteContextProvider({
-  children
+  children,
 }: {
   children: React.ReactNode;
 }) {
   const dbPromise = useAsync({
-    promiseFn: setupDb
+    promiseFn: setupDb,
   });
 
   const getDevices = React.useCallback(
@@ -240,15 +240,15 @@ export function SQLiteContextProvider({
   );
 
   const devicesAsync = useAsync({
-    promiseFn: getDevices
+    promiseFn: getDevices,
   });
 
   return (
     <SQLiteContext.Provider
       value={{
         getMeasurements: React.useCallback(
-          ({ deviceId, first = 500, cursor }) =>
-            dbPromise.promise.then(({ db }) =>
+          ({ deviceId, first = 500, cursor }) => {
+            return dbPromise.promise.then(({ db }) =>
               runQuery<{
                 id: number;
                 timestamp: number;
@@ -269,15 +269,18 @@ export function SQLiteContextProvider({
 
                   where
                     measurement.type = 'pressure'
-                    and device_id = ?
-                    ${cursor == null ? '' : 'and ? <= measurement.id'}
+                    and device_id = ?1
+                    ${cursor == null ? '' : 'and ?3 <= measurement.id'}
 
-                  order by measurement.timestamp desc
-                  limit ?
+                  order by
+                    measurement.id desc
+
+                  limit ?2
                 `,
-                cursor == null ? [deviceId, first] : [deviceId, cursor, first]
+                cursor == null ? [deviceId, first] : [deviceId, first, cursor]
               )
-            ),
+            );
+          },
           [dbPromise.promise]
         ),
 
@@ -286,7 +289,7 @@ export function SQLiteContextProvider({
         devicesAsync,
 
         insertMeasurements: React.useCallback(
-          async p => {
+          async (p) => {
             const { db } = await dbPromise.promise;
 
             await db.executeSql(
@@ -303,7 +306,7 @@ export function SQLiteContextProvider({
                   row.external_timestamp,
                   row.type,
                   row.value,
-                  row.raw
+                  row.raw,
                 ],
                 [] as any
               )
@@ -313,7 +316,7 @@ export function SQLiteContextProvider({
         ),
 
         getOrCreateDevice: React.useCallback(
-          async p => {
+          async (p) => {
             const { db } = await dbPromise.promise;
 
             const deviceId = await runQuery<{ id: number }>(
@@ -326,7 +329,7 @@ export function SQLiteContextProvider({
               `,
               [p.hardware_id]
             ).then(
-              rows =>
+              (rows) =>
                 rows[0]?.id ??
                 db
                   .executeSql(
@@ -336,7 +339,7 @@ export function SQLiteContextProvider({
                     `,
                     [p.hardware_id, p.name, Date.now()]
                   )
-                  .then(result => result[0].insertId as number)
+                  .then((result) => result[0].insertId as number)
             );
 
             await devicesAsync.reload();
@@ -344,7 +347,7 @@ export function SQLiteContextProvider({
             return { id: deviceId };
           },
           [dbPromise.promise, devicesAsync]
-        )
+        ),
       }}
     >
       {children}
