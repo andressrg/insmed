@@ -1,12 +1,13 @@
 import React from 'react';
 import { View, Button } from 'react-native';
 import codePush from 'react-native-code-push';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, DarkTheme } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { useNavigation } from '@react-navigation/native';
 
 import { SQLiteContextProvider } from './components/SQLContext';
 import { BLEContextProvider } from './components/BLEContext';
+import { COLOR_2 } from './components/UI';
 
 import { DevicesListScreen } from './screens/DevicesListScreen';
 import { DeviceScanScreen } from './screens/DeviceScan';
@@ -31,6 +32,7 @@ function MainStackScreen() {
               <Button
                 onPress={() => navigation.navigate('DeviceScan')}
                 title="Buscar"
+                color={COLOR_2}
               />
             </View>
           ),
@@ -42,7 +44,7 @@ function MainStackScreen() {
 
 const AppWithContext = () => (
   <SQLiteContextProvider>
-    <NavigationContainer>
+    <NavigationContainer theme={DarkTheme}>
       <BLEContextProvider>
         <RootStack.Navigator mode="modal">
           <RootStack.Screen

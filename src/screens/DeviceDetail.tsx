@@ -15,11 +15,12 @@ import { useAsync } from 'react-async';
 import * as ScreenOrientation from 'expo-screen-orientation';
 import Icon from 'react-native-vector-icons/AntDesign';
 import { useNavigation } from '@react-navigation/native';
+import merge from 'lodash.merge';
 
 import { SQLiteContext } from '../components/SQLContext';
 import { useScreenDimensions } from '../components/useScreenDimensions';
 import { getLines, correctTs, initCorrectTsRef } from '../utils/charts';
-import { ROW_HEIGHT, ListItem } from '../components/UI';
+import { ROW_HEIGHT, ListItem, COLOR_4, COLOR_3 } from '../components/UI';
 import { usePromise } from '../components/usePromise';
 
 const WRAPAROUND_MILLIS = 1 * 60 * 1000;
@@ -137,25 +138,22 @@ export function DeviceDetailScreen({ route }) {
             }}
           >
             <VictoryChart
-              theme={VictoryTheme.material}
               domainPadding={20}
               domain={{ x: [0, WRAPAROUND_MILLIS] }}
               height={viewSize.height}
               width={viewSize.width}
               padding={{ left: 50 }}
-              // style={{
-              //   // parent: { flex: 1, backgroundColor: 'red', display: 'flex' },
-              //   parent: { backgroundColor: 'red' },
-              // }}
+              theme={merge(VictoryTheme.material, {
+                axis: { style: { tickLabels: { fill: COLOR_3 } } },
+              })}
             >
               <VictoryLine
-                style={{ data: { stroke: 'red' } }}
+                style={{ data: { stroke: COLOR_3 } }}
                 data={background ?? []}
-                // interpolation="natural"
               />
               <VictoryLine
+                style={{ data: { stroke: COLOR_4 } }}
                 data={foreground ?? []}
-                // interpolation="natural"
               />
 
               <VictoryAxis dependentAxis />
@@ -181,7 +179,7 @@ export function DeviceDetailScreen({ route }) {
               name="close"
               size={20}
               backgroundColor="transparent"
-              color="black"
+              color={COLOR_4}
             />
           </TouchableOpacity>
         </View>
