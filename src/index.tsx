@@ -48,6 +48,13 @@ function MainStackScreen() {
           headerShown: false,
         }}
       />
+      <MainStack.Screen
+        name="DeviceDetail"
+        component={DeviceDetailScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
     </MainStack.Navigator>
   );
 }
