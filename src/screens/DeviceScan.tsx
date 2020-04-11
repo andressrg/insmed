@@ -3,7 +3,7 @@ import {
   View,
   ScrollView,
   SafeAreaView,
-  ActivityIndicator
+  ActivityIndicator,
 } from 'react-native';
 import { Device } from 'react-native-ble-plx';
 import { useNavigation } from '@react-navigation/native';
@@ -13,8 +13,7 @@ import { useAsync } from 'react-async';
 import { BLEContext } from '../components/BLEContext';
 import { ListItem } from '../components/UI';
 
-// const UART_SERVICE_UUID = '0000FFE0-0000-1000-8000-00805F9B34FB';
-const UART_CHARACTERISTIC_UUID = '0000FFE1-0000-1000-8000-00805F9B34FB';
+import { validateDevice } from '../utils/ble';
 
 export function multiline(text?: string) {
   return (text == null ? '' : text)
@@ -24,61 +23,6 @@ export function multiline(text?: string) {
         index === 0 ? [...acc, line] : [...acc, <br key={index} />, line],
       [] as React.ReactNode[]
     );
-}
-
-async function validateDevice({
-  device,
-  manager,
-  signal
-}): Promise<
-  | {
-      device: import('react-native-ble-plx').Device;
-      uartCharacteristic?: import('react-native-ble-plx').Characteristic;
-    }
-  | undefined
-> {
-  const deviceId = device.id;
-
-  await manager.connectToDevice(deviceId);
-
-  if (signal.aborted) {
-    manager.cancelDeviceConnection(deviceId);
-    return;
-  }
-
-  const deviceWithCharacteristics = await manager.discoverAllServicesAndCharacteristicsForDevice(
-    deviceId
-  );
-
-  if (signal.aborted) {
-    manager.cancelDeviceConnection(deviceId);
-    return;
-  }
-
-  const services = await deviceWithCharacteristics.services();
-
-  if (signal.aborted) {
-    manager.cancelDeviceConnection(deviceId);
-    return;
-  }
-
-  const characteristics = (
-    await Promise.all(services.map(service => service.characteristics()))
-  ).flat();
-
-  if (signal.aborted) {
-    manager.cancelDeviceConnection(deviceId);
-    return;
-  }
-
-  const uartCharacteristic = characteristics.find(
-    char => char.uuid.toLowerCase() === UART_CHARACTERISTIC_UUID.toLowerCase()
-  );
-
-  return {
-    device,
-    uartCharacteristic
-  };
 }
 
 export function DeviceScanScreen() {
@@ -106,7 +50,7 @@ export function DeviceScanScreen() {
       }
 
       function scanAndConnect() {
-        manager.startDeviceScan(null, null, (error, device) => {
+        manager.startDeviceScan(null, null, async (error, device) => {
           if (error) {
             // Handle error (scanning will be stopped automatically)
             alert(error);
@@ -114,13 +58,13 @@ export function DeviceScanScreen() {
           }
 
           device != null &&
-            setDevices(state => ({
+            setDevices((state) => ({
               ...state,
 
               [device.id]: {
                 foundAt: new Date(),
-                device
-              }
+                device,
+              },
             }));
         });
 
@@ -129,13 +73,13 @@ export function DeviceScanScreen() {
 
       let stopStateChangeSubscription;
 
-      const subscription = manager.onStateChange(state => {
+      const subscription = manager.onStateChange((state) => {
         deactivators.push(stopStateChangeSubscription);
         if (state === 'PoweredOn') {
           scanAndConnect();
           stopStateChangeSubscription();
           deactivators = deactivators.filter(
-            fn => fn !== stopStateChangeSubscription
+            (fn) => fn !== stopStateChangeSubscription
           );
         }
       }, true);
@@ -143,7 +87,7 @@ export function DeviceScanScreen() {
       stopStateChangeSubscription = () => subscription.remove();
     });
 
-    return () => deactivators.forEach(fn => fn());
+    return () => deactivators.forEach((fn) => fn());
   }, [manager]);
 
   return (
@@ -169,15 +113,15 @@ export function DeviceScanScreen() {
                     validateDevice({
                       manager,
                       device,
-                      signal: controller.signal
-                    }).then(async result => {
+                      signal: controller.signal,
+                    }).then(async (result) => {
                       const uartCharacteristic = result?.uartCharacteristic;
                       const device = result?.device;
 
                       if (uartCharacteristic != null && device != null) {
                         await connectToCharacteristic({
                           characteristic: uartCharacteristic,
-                          device
+                          device,
                         });
 
                         navigation.goBack();
