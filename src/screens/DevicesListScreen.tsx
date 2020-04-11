@@ -6,16 +6,24 @@ import {
   LayoutProvider,
 } from 'recyclerlistview';
 import { useNavigation } from '@react-navigation/native';
+import { Permissions } from 'react-native-unimodules';
 
 import { SQLiteContext } from '../components/SQLContext';
 import { BLEContext } from '../components/BLEContext';
 import { ROW_HEIGHT, ListItem } from '../components/UI';
 import { useScreenDimensions } from '../components/useScreenDimensions';
+import { validateDevice } from '../utils/ble';
 
 export function DevicesListScreen() {
   const { width: screenWidth } = useScreenDimensions();
   const dbContext = React.useContext(SQLiteContext);
   const bleContext = React.useContext(BLEContext);
+
+  const manager = bleContext.manager!;
+  const connectToCharacteristic = bleContext.connectToCharacteristic!;
+
+  const getDeviceById = dbContext.getDeviceById!;
+
   const navigation = useNavigation();
 
   // React.useEffect(() => {
@@ -76,6 +84,73 @@ export function DevicesListScreen() {
     ),
     [devicesPending, devicesReload]
   );
+
+  React.useEffect(() => {
+    let deactivators: (() => void)[] = [];
+
+    Permissions.askAsync(Permissions.LOCATION).then(({ status }) => {
+      if (status !== 'granted') {
+        alert('BLE no autorizado');
+        return;
+      }
+
+      function scanAndConnect() {
+        manager.startDeviceScan(null, null, async (error, device) => {
+          if (error) {
+            // Handle error (scanning will be stopped automatically)
+            alert(error);
+            return;
+          }
+
+          if (device != null) {
+            getDeviceById({
+              hardware_id: device?.id,
+            })
+              .then((deviceFound) => (deviceFound.length > 0 ? device : null))
+              .then((deviceToConnect) => {
+                const controller = new AbortController();
+                if (deviceToConnect != null) {
+                  return validateDevice({
+                    manager,
+                    device: deviceToConnect,
+                    signal: controller.signal,
+                  }).then(async (result) => {
+                    const uartCharacteristic = result?.uartCharacteristic;
+                    const device = result?.device;
+
+                    if (uartCharacteristic != null && device != null) {
+                      await connectToCharacteristic({
+                        characteristic: uartCharacteristic,
+                        device: deviceToConnect,
+                      });
+                    }
+                  });
+                }
+              });
+          }
+        });
+
+        deactivators.push(() => manager.stopDeviceScan());
+      }
+
+      let stopStateChangeSubscription;
+
+      const subscription = manager.onStateChange((state) => {
+        deactivators.push(stopStateChangeSubscription);
+        if (state === 'PoweredOn') {
+          scanAndConnect();
+          stopStateChangeSubscription();
+          deactivators = deactivators.filter(
+            (fn) => fn !== stopStateChangeSubscription
+          );
+        }
+      }, true);
+
+      stopStateChangeSubscription = () => subscription.remove();
+    });
+
+    return () => deactivators.forEach((fn) => fn());
+  });
 
   return (
     <SafeAreaView style={{ flex: 1 }}>

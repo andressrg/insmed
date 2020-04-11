@@ -66,6 +66,16 @@ export const SQLiteContext = React.createContext<{
     }[]
   >;
 
+  getDeviceById?: (p: {
+    hardware_id: string;
+  }) => Promise<
+    {
+      id: number;
+      hardware_id: string;
+      name: string;
+    }[]
+  >;
+
   devicesAsync?: AsyncState<
     {
       id: number;
@@ -243,6 +253,31 @@ export function SQLiteContextProvider({
     promiseFn: getDevices,
   });
 
+  const getDeviceById = React.useCallback(
+    ({ hardware_id }) =>
+      dbPromise.promise.then(({ db }) =>
+        runQuery<{
+          id: number;
+          hardware_id: string;
+          name: string;
+        }>(
+          db,
+          `
+            SELECT
+              id,
+              hardware_id,
+              name
+
+            FROM device
+            where hardware_id = ?1
+            order by device.name
+          `,
+          [hardware_id]
+        )
+      ),
+    [dbPromise.promise]
+  );
+
   return (
     <SQLiteContext.Provider
       value={{
@@ -285,6 +320,8 @@ export function SQLiteContextProvider({
         ),
 
         getDevices,
+
+        getDeviceById,
 
         devicesAsync,
 
