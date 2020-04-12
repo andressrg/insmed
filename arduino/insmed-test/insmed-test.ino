@@ -7,6 +7,8 @@ void setup()
   // put your setup code here, to run once:
   Serial.begin(9600);
   Serial1.begin(9600);
+
+  Serial1.println("AT+RESTART");
 }
 
 unsigned long sinTimer = 0;
@@ -16,9 +18,13 @@ int amp = 1;
 String inputString;
 bool startBT = LOW;
 
+bool handShaked = LOW;
+
+unsigned long beatTimer = 0;
+
 void loop()
 {
-  if ((millis() - sinTimer) > 100)
+  if (handShaked && (millis() - sinTimer) > 100)
   {
     sinTimer = millis();
 
@@ -38,16 +44,33 @@ void loop()
     Serial1.print(';');
   }
 
+  if (handShaked && (millis() - beatTimer) > 10 * 1000)
+  {
+    Serial1.println("AT+RESTART");
+    Serial.println("");
+    Serial.println("BLE restarted");
+    Serial.println("");
+
+    handShaked = LOW;
+  }
+
   if (Serial1.available())
   {
     char inChar = Serial1.read();
-    Serial.print("arr");
-    Serial.print(inChar);
+    Serial.write(inChar);
+
+    if (inChar == 'h')
+    {
+      handShaked = HIGH;
+      beatTimer = millis();
+
+      Serial.println("handshaked");
+    }
 
     if (inChar == 'a')
       startBT = HIGH;
 
-    if (startBT && inChar != 'a' && inChar != 'b' && inChar != 'c' && inChar != ';')
+    if (startBT && inChar != 'a' && inChar != 'h' && inChar != 'b' && inChar != 'c' && inChar != ';')
       inputString += inChar;
 
     if (inChar == ';')

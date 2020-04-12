@@ -50,8 +50,6 @@ export function DeviceScanScreen() {
       }
 
       function scanAndConnect() {
-        console.log('scanAndConnect', manager);
-
         manager.startDeviceScan(null, null, async (error, device) => {
           if (error) {
             // Handle error (scanning will be stopped automatically)

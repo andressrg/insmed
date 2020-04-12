@@ -383,7 +383,7 @@ export function SQLiteContextProvider({
 
             return { id: deviceId };
           },
-          [dbPromise.promise, devicesAsync]
+          [dbPromise.promise, devicesAsync.reload]
         ),
       }}
     >

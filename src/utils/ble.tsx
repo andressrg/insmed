@@ -48,6 +48,8 @@ export async function validateDevice({
     return;
   }
 
+  // await manager.cancelDeviceConnection(deviceId);
+
   const uartCharacteristic = characteristics.find(
     (char) => char.uuid.toLowerCase() === UART_CHARACTERISTIC_UUID.toLowerCase()
   );

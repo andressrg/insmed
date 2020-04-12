@@ -1,6 +1,6 @@
 import React from 'react';
 import { BleManager, Characteristic, Device } from 'react-native-ble-plx';
-import { decode } from 'base-64';
+import { decode, encode } from 'base-64';
 
 import { SQLiteContext } from './SQLContext';
 import { parseData } from '../utils';
@@ -84,6 +84,30 @@ function CharacteristicConnection({
 
         if (controller.signal.aborted) return;
 
+        manager.onDeviceDisconnected(deviceHardwareId, (error, device) => {
+          console.log(`Device ${device?.id} disconnected`);
+        });
+
+        await manager.writeCharacteristicWithoutResponseForDevice!(
+          deviceHardwareId,
+          characteristic.serviceUUID,
+          characteristic.uuid,
+          encode('h')
+        );
+
+        const interval = setInterval(async () => {
+          await manager.writeCharacteristicWithoutResponseForDevice!(
+            deviceHardwareId,
+            characteristic.serviceUUID,
+            characteristic.uuid,
+            encode('h')
+          );
+        }, 3 * 1000);
+
+        deactivators.push(() => clearInterval(interval));
+
+        if (controller.signal.aborted) return;
+
         const subscription = characteristic.monitor(async (err, char) => {
           if (controller.signal.aborted) return;
 
@@ -111,8 +135,23 @@ function CharacteristicConnection({
       }
     })();
 
-    return () => deactivators.forEach((fn) => fn());
+    return () => {
+      console.log('calling deactivators');
+      deactivators.forEach((fn) => fn());
+    };
   }, [characteristic, deviceHardwareId, deviceId, insertMeasurements, manager]);
+
+  // React.useEffect(() => console.log('characteristic'), [characteristic]);
+  // React.useEffect(() => console.log('deviceHardwareId'), [deviceHardwareId]);
+  // React.useEffect(() => console.log('deviceId'), [deviceId]);
+  // React.useEffect(() => console.log('insertMeasurements'), [
+  //   insertMeasurements,
+  // ]);
+  // React.useEffect(() => console.log('manager'), [manager]);
+  // React.useEffect(
+  //   () => console.log('writeCharacteristicWithoutResponseForDevice'),
+  //   [writeCharacteristicWithoutResponseForDevice]
+  // );
 
   return null;
 }
@@ -130,9 +169,14 @@ export function BLEContextProvider({
     }
   }, [manager]);
 
-  React.useEffect(() => {
-    return () => manager && manager.destroy();
-  }, [manager]);
+  // React.useEffect(() => {
+  //   return () => {
+  //     if (manager != null) {
+  //       setManager(undefined);
+  //       manager.destroy();
+  //     }
+  //   };
+  // }, [manager]);
 
   const context = React.useContext(SQLiteContext);
   const getOrCreateDevice = context.getOrCreateDevice!;
