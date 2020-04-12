@@ -67,7 +67,7 @@ export function DevicesListScreen() {
     devices &&
     devices.map((device) => ({
       device,
-      isConnected: connectedDeviceIds[device.id] === true,
+      isConnected: connectedDeviceIds[device.id] != null,
     }));
 
   const dataProvider = React.useMemo(
