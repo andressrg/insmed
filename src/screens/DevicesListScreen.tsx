@@ -171,7 +171,7 @@ export function DevicesListScreen() {
     [devicesPending, devicesReload]
   );
 
-  useDeviceAutoConnect();
+  // useDeviceAutoConnect();
 
   return (
     <SafeAreaView style={{ flex: 1 }}>

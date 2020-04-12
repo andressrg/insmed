@@ -41,7 +41,7 @@ void loop()
   if (Serial1.available())
   {
     char inChar = Serial1.read();
-    Serial.print('arr');
+    Serial.print("arr");
     Serial.print(inChar);
 
     if (inChar == 'a')
