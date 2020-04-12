@@ -1,0 +1,5 @@
+{
+    "port": "/dev/tty.usbmodem14101",
+    "board": "arduino:avr:uno",
+    "sketch": "arduino/BT_Receive.ino"
+}

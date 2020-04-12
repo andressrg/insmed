@@ -16,7 +16,17 @@ export const BLEContext = React.createContext<{
     device: Device;
   }) => Promise<void>;
 
-  connectedDeviceIds?: { [k: string]: true };
+  connectedDeviceIds?: {
+    [k: string]: { deviceHardwareId; characteristic: Characteristic };
+  };
+
+  writeCharacteristicWithoutResponseForDevice?: (
+    deviceIdentifier,
+    serviceUUID,
+    characteristicUUID,
+    base64Value,
+    transactionId?
+  ) => Promise<any>;
 }>({});
 
 function CharacteristicConnection({
@@ -75,7 +85,11 @@ export function BLEContextProvider({
   const getOrCreateDevice = context.getOrCreateDevice!;
 
   const [characteristics, setCharacteristics] = React.useState<
-    { characteristic: Characteristic; deviceId: number }[]
+    {
+      characteristic: Characteristic;
+      deviceId: number;
+      deviceHardwareId: string;
+    }[]
   >([]);
 
   return (
@@ -93,7 +107,14 @@ export function BLEContextProvider({
             setCharacteristics((state) =>
               state.map((s) => s.characteristic).includes(characteristic)
                 ? state
-                : [...state, { characteristic, deviceId: id }]
+                : [
+                    ...state,
+                    {
+                      characteristic,
+                      deviceId: id,
+                      deviceHardwareId: device.id,
+                    },
+                  ]
             );
           },
           [getOrCreateDevice]
@@ -102,11 +123,25 @@ export function BLEContextProvider({
         connectedDeviceIds: React.useMemo(
           () =>
             characteristics.reduce(
-              (acc, d) => ({ ...acc, [d.deviceId]: true }),
-              {} as { [k: string]: true }
+              (acc, d) => ({
+                ...acc,
+                [d.deviceId]: {
+                  deviceHardwareId: d.deviceHardwareId,
+                  characteristic: d.characteristic,
+                },
+              }),
+              {} as {
+                [k: string]: {
+                  deviceHardwareId;
+                  characteristic: Characteristic;
+                };
+              }
             ),
           [characteristics]
         ),
+
+        writeCharacteristicWithoutResponseForDevice: (...args) =>
+          manager.writeCharacteristicWithResponseForDevice(...args),
       }}
     >
       {children}
