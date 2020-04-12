@@ -14,7 +14,9 @@ export async function validateDevice({
 > {
   const deviceId = device.id;
 
-  await manager.connectToDevice(deviceId);
+  if ((await manager.isDeviceConnected(deviceId)) === false) {
+    await manager.connectToDevice(deviceId);
+  }
 
   if (signal.aborted) {
     manager.cancelDeviceConnection(deviceId);

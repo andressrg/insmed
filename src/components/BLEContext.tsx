@@ -92,6 +92,30 @@ export function BLEContextProvider({
     }[]
   >([]);
 
+  const connectedDeviceIds = React.useMemo(
+    () =>
+      characteristics.reduce(
+        (acc, d) => ({
+          ...acc,
+          [d.deviceId]: {
+            deviceHardwareId: d.deviceHardwareId,
+            characteristic: d.characteristic,
+          },
+        }),
+        {} as {
+          [k: string]: {
+            deviceHardwareId;
+            characteristic: Characteristic;
+          };
+        }
+      ),
+    [characteristics]
+  );
+
+  React.useEffect(() => {
+    return () => manager.destroy();
+  }, [manager]);
+
   return (
     <BLEContext.Provider
       value={{
@@ -120,25 +144,7 @@ export function BLEContextProvider({
           [getOrCreateDevice]
         ),
 
-        connectedDeviceIds: React.useMemo(
-          () =>
-            characteristics.reduce(
-              (acc, d) => ({
-                ...acc,
-                [d.deviceId]: {
-                  deviceHardwareId: d.deviceHardwareId,
-                  characteristic: d.characteristic,
-                },
-              }),
-              {} as {
-                [k: string]: {
-                  deviceHardwareId;
-                  characteristic: Characteristic;
-                };
-              }
-            ),
-          [characteristics]
-        ),
+        connectedDeviceIds,
 
         writeCharacteristicWithoutResponseForDevice: (...args) =>
           manager.writeCharacteristicWithResponseForDevice(...args),
