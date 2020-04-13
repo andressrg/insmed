@@ -7,9 +7,9 @@ const DATABASE_VERSION = '1.0';
 const DATABASE_DISPLAY_NAME = 'SQLite insmed Database';
 const DATABASE_SIZE = 200000;
 
-// if (__DEV__) {
-//   SQLite.DEBUG(true);
-// }
+if (__DEV__) {
+  SQLite.DEBUG(true);
+}
 
 SQLite.enablePromise(true);
 
@@ -326,16 +326,27 @@ export function SQLiteContextProvider({
         devicesAsync,
 
         insertMeasurements: React.useCallback(
-          async (p) => {
+          async (
+            p: {
+              device_id: number;
+              timestamp: number;
+              external_timestamp: number;
+              type: string;
+              value: number;
+              raw: string;
+            }[]
+          ) => {
             const { db } = await dbPromise.promise;
+
+            const pFiltered = p.filter((p) => p.value != null);
 
             await db.executeSql(
               `
                 INSERT INTO measurement (device_id, timestamp, external_timestamp, type, value, raw)
                 VALUES
-                  ${p.map(() => `(?, ?, ?, ?, ?, ?)`)};
+                  ${pFiltered.map(() => `(?, ?, ?, ?, ?, ?)`)};
               `,
-              p.reduce(
+              pFiltered.reduce(
                 (acc, row) => [
                   ...acc,
                   row.device_id,
