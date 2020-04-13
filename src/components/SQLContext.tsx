@@ -338,7 +338,9 @@ export function SQLiteContextProvider({
           ) => {
             const { db } = await dbPromise.promise;
 
-            const pFiltered = p.filter((p) => p.value != null);
+            const pFiltered = p.filter(
+              (p) => p.value != null && !Number.isNaN(p.value)
+            );
 
             await db.executeSql(
               `
