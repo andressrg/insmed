@@ -113,9 +113,13 @@ function CharacteristicConnection({
 
           if (char) {
             const decodedMessage = decode(char.value);
-            const data = parseData({ data: decodedMessage, cacheRef });
+            const { pressure: data } = parseData({
+              data: decodedMessage,
+              cacheRef,
+            });
 
-            data.length > 0 &&
+            data &&
+              data.length > 0 &&
               insertMeasurements(
                 data.map((d) => ({
                   device_id: deviceId,

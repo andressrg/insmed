@@ -189,7 +189,7 @@ export function DeviceDetailScreen({ route }) {
                   bleContext.connectedDeviceIds![deviceId].characteristic
                     .serviceUUID,
                   bleContext.connectedDeviceIds![deviceId].characteristic.uuid,
-                  encode('a1;')
+                  encode('i30p20;')
                 )
               );
             }}
@@ -198,14 +198,14 @@ export function DeviceDetailScreen({ route }) {
 
           <Button
             onPress={async () => {
-              console.log(
-                'qowidjqoiwdjqw',
-                bleContext.connectedDeviceIds![deviceId].deviceHardwareId,
-                bleContext.connectedDeviceIds![deviceId].characteristic
-                  .serviceUUID,
-                bleContext.connectedDeviceIds![deviceId].characteristic.uuid,
-                encode('a1;')
-              );
+              // console.log(
+              //   'qowidjqoiwdjqw',
+              //   bleContext.connectedDeviceIds![deviceId].deviceHardwareId,
+              //   bleContext.connectedDeviceIds![deviceId].characteristic
+              //     .serviceUUID,
+              //   bleContext.connectedDeviceIds![deviceId].characteristic.uuid,
+              //   encode('p40;')
+              // );
 
               console.log(
                 await bleContext.writeCharacteristicWithoutResponseForDevice!(
@@ -213,11 +213,35 @@ export function DeviceDetailScreen({ route }) {
                   bleContext.connectedDeviceIds![deviceId].characteristic
                     .serviceUUID,
                   bleContext.connectedDeviceIds![deviceId].characteristic.uuid,
-                  encode('a100;')
+                  encode('p40;')
                 )
               );
             }}
             title="100"
+          />
+
+          <Button
+            onPress={async () => {
+              // console.log(
+              //   'qowidjqoiwdjqw',
+              //   bleContext.connectedDeviceIds![deviceId].deviceHardwareId,
+              //   bleContext.connectedDeviceIds![deviceId].characteristic
+              //     .serviceUUID,
+              //   bleContext.connectedDeviceIds![deviceId].characteristic.uuid,
+              //   encode('p40;')
+              // );
+
+              console.log(
+                await bleContext.writeCharacteristicWithoutResponseForDevice!(
+                  bleContext.connectedDeviceIds![deviceId].deviceHardwareId,
+                  bleContext.connectedDeviceIds![deviceId].characteristic
+                    .serviceUUID,
+                  bleContext.connectedDeviceIds![deviceId].characteristic.uuid,
+                  encode('s')
+                )
+              );
+            }}
+            title="s"
           />
 
           <TouchableOpacity
