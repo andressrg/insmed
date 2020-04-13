@@ -198,15 +198,6 @@ export function DeviceDetailScreen({ route }) {
 
           <Button
             onPress={async () => {
-              // console.log(
-              //   'qowidjqoiwdjqw',
-              //   bleContext.connectedDeviceIds![deviceId].deviceHardwareId,
-              //   bleContext.connectedDeviceIds![deviceId].characteristic
-              //     .serviceUUID,
-              //   bleContext.connectedDeviceIds![deviceId].characteristic.uuid,
-              //   encode('p40;')
-              // );
-
               console.log(
                 await bleContext.writeCharacteristicWithoutResponseForDevice!(
                   bleContext.connectedDeviceIds![deviceId].deviceHardwareId,
@@ -222,23 +213,12 @@ export function DeviceDetailScreen({ route }) {
 
           <Button
             onPress={async () => {
-              // console.log(
-              //   'qowidjqoiwdjqw',
-              //   bleContext.connectedDeviceIds![deviceId].deviceHardwareId,
-              //   bleContext.connectedDeviceIds![deviceId].characteristic
-              //     .serviceUUID,
-              //   bleContext.connectedDeviceIds![deviceId].characteristic.uuid,
-              //   encode('p40;')
-              // );
-
-              console.log(
-                await bleContext.writeCharacteristicWithoutResponseForDevice!(
-                  bleContext.connectedDeviceIds![deviceId].deviceHardwareId,
-                  bleContext.connectedDeviceIds![deviceId].characteristic
-                    .serviceUUID,
-                  bleContext.connectedDeviceIds![deviceId].characteristic.uuid,
-                  encode('s')
-                )
+              await bleContext.writeCharacteristicWithoutResponseForDevice!(
+                bleContext.connectedDeviceIds![deviceId].deviceHardwareId,
+                bleContext.connectedDeviceIds![deviceId].characteristic
+                  .serviceUUID,
+                bleContext.connectedDeviceIds![deviceId].characteristic.uuid,
+                encode('s')
               );
             }}
             title="s"

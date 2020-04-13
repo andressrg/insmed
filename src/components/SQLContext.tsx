@@ -7,9 +7,9 @@ const DATABASE_VERSION = '1.0';
 const DATABASE_DISPLAY_NAME = 'SQLite insmed Database';
 const DATABASE_SIZE = 200000;
 
-if (__DEV__) {
-  SQLite.DEBUG(true);
-}
+// if (__DEV__) {
+//   SQLite.DEBUG(true);
+// }
 
 SQLite.enablePromise(true);
 

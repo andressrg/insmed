@@ -18,9 +18,9 @@ export const parseData = ({
 } => {
   const array = data.split(';').filter((s) => s !== '');
 
-  let presControl;
-  let bpm;
-  let ieRatio;
+  let presControl: number;
+  let bpm: number;
+  let ieRatio: number;
 
   let dataArray: IData[] = [];
 

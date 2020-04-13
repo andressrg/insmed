@@ -1,6 +1,7 @@
 import React from 'react';
 import { BleManager, Characteristic, Device } from 'react-native-ble-plx';
 import { decode, encode } from 'base-64';
+import produce from 'immer';
 
 import { SQLiteContext } from './SQLContext';
 import { parseData } from '../utils';
@@ -17,7 +18,14 @@ export const BLEContext = React.createContext<{
   }) => Promise<void>;
 
   connectedDeviceIds?: {
-    [k: string]: { deviceHardwareId; characteristic: Characteristic };
+    [k: string]: {
+      deviceHardwareId: string;
+      characteristic: Characteristic;
+
+      presControl?: number;
+      bpm?: number;
+      ieRatio?: number;
+    };
   };
 
   writeCharacteristicWithoutResponseForDevice?: (
@@ -56,10 +64,19 @@ function CharacteristicConnection({
   characteristic,
   deviceId,
   deviceHardwareId,
+  setParams,
+  onDisconnect,
 }: {
   characteristic: Characteristic;
   deviceId: number;
   deviceHardwareId: string;
+  setParams: (p: {
+    deviceId;
+    presControl?: number;
+    bpm?: number;
+    ieRatio?: number;
+  }) => void;
+  onDisconnect: (p: { deviceId }) => void;
 }) {
   const context = React.useContext(SQLiteContext);
   const bleContext = React.useContext(BLEContext);
@@ -86,6 +103,7 @@ function CharacteristicConnection({
 
         manager.onDeviceDisconnected(deviceHardwareId, (error, device) => {
           console.log(`Device ${device?.id} disconnected`);
+          onDisconnect({ deviceId });
         });
 
         await manager.writeCharacteristicWithoutResponseForDevice!(
@@ -113,15 +131,31 @@ function CharacteristicConnection({
 
           if (char) {
             const decodedMessage = decode(char.value);
-            const { pressure: data } = parseData({
+            const parsed = parseData({
               data: decodedMessage,
               cacheRef,
             });
 
-            data &&
-              data.length > 0 &&
+            const pressure = parsed.pressure;
+
+            if (
+              parsed.presControl != null ||
+              parsed.bpm != null ||
+              parsed.ieRatio != null
+            ) {
+              setParams({
+                deviceId,
+
+                presControl: parsed.presControl,
+                bpm: parsed.bpm,
+                ieRatio: parsed.ieRatio,
+              });
+            }
+
+            pressure &&
+              pressure.length > 0 &&
               insertMeasurements(
-                data.map((d) => ({
+                pressure.map((d) => ({
                   device_id: deviceId,
                   timestamp: Date.now(),
                   external_timestamp: d.t,
@@ -140,22 +174,17 @@ function CharacteristicConnection({
     })();
 
     return () => {
-      console.log('calling deactivators');
       deactivators.forEach((fn) => fn());
     };
-  }, [characteristic, deviceHardwareId, deviceId, insertMeasurements, manager]);
-
-  // React.useEffect(() => console.log('characteristic'), [characteristic]);
-  // React.useEffect(() => console.log('deviceHardwareId'), [deviceHardwareId]);
-  // React.useEffect(() => console.log('deviceId'), [deviceId]);
-  // React.useEffect(() => console.log('insertMeasurements'), [
-  //   insertMeasurements,
-  // ]);
-  // React.useEffect(() => console.log('manager'), [manager]);
-  // React.useEffect(
-  //   () => console.log('writeCharacteristicWithoutResponseForDevice'),
-  //   [writeCharacteristicWithoutResponseForDevice]
-  // );
+  }, [
+    characteristic,
+    deviceHardwareId,
+    deviceId,
+    insertMeasurements,
+    manager,
+    onDisconnect,
+    setParams,
+  ]);
 
   return null;
 }
@@ -173,15 +202,6 @@ export function BLEContextProvider({
     }
   }, [manager]);
 
-  // React.useEffect(() => {
-  //   return () => {
-  //     if (manager != null) {
-  //       setManager(undefined);
-  //       manager.destroy();
-  //     }
-  //   };
-  // }, [manager]);
-
   const context = React.useContext(SQLiteContext);
   const getOrCreateDevice = context.getOrCreateDevice!;
 
@@ -190,6 +210,10 @@ export function BLEContextProvider({
       characteristic: Characteristic;
       deviceId: number;
       deviceHardwareId: string;
+
+      presControl?: number;
+      bpm?: number;
+      ieRatio?: number;
     }[]
   >([]);
 
@@ -201,6 +225,10 @@ export function BLEContextProvider({
           [d.deviceId]: {
             deviceHardwareId: d.deviceHardwareId,
             characteristic: d.characteristic,
+
+            presControl: d.presControl,
+            bpm: d.bpm,
+            ieRatio: d.ieRatio,
           },
         }),
         {} as {
@@ -236,17 +264,42 @@ export function BLEContextProvider({
     [getOrCreateDevice]
   );
 
-  // React.useEffect(() => {
-  //   return () => manager.destroy();
-  // }, [manager]);
+  const setParams = React.useCallback(
+    ({
+      deviceId,
+      presControl,
+      bpm,
+      ieRatio,
+    }: {
+      deviceId;
+      presControl?: number;
+      bpm?: number;
+      ieRatio?: number;
+    }) => {
+      setCharacteristics((state) =>
+        produce(state, (draftState) => {
+          const item = draftState.find((t) => t.deviceId === deviceId);
+
+          if (item) {
+            if (presControl != null) item.presControl = presControl;
+            if (bpm != null) item.bpm = bpm;
+            if (ieRatio != null) item.ieRatio = ieRatio;
+          }
+        })
+      );
+    },
+    []
+  );
+
+  const onDisconnect = React.useCallback(({ deviceId }: { deviceId }) => {
+    setCharacteristics((state) => state.filter((i) => i.deviceId !== deviceId));
+  }, []);
 
   return manager == null ? null : (
     <BLEContext.Provider
       value={{
         manager,
-
         connectToCharacteristic,
-
         connectedDeviceIds,
 
         writeCharacteristicWithoutResponseForDevice: (...args) =>
@@ -262,6 +315,8 @@ export function BLEContextProvider({
             characteristic={characteristic.characteristic}
             deviceId={characteristic.deviceId}
             deviceHardwareId={characteristic.deviceHardwareId}
+            setParams={setParams}
+            onDisconnect={onDisconnect}
           />
         ))}
       </CharacteristicsErrorBoundary>
