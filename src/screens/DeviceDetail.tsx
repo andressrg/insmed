@@ -17,6 +17,7 @@ import Icon from 'react-native-vector-icons/AntDesign';
 import { useNavigation } from '@react-navigation/native';
 import merge from 'lodash.merge';
 import { encode } from 'base-64';
+import { useKeepAwake } from 'expo-keep-awake';
 
 import { SQLiteContext } from '../components/SQLContext';
 import { BLEContext } from '../components/BLEContext';
@@ -28,6 +29,8 @@ import { usePromise } from '../components/usePromise';
 const WRAPAROUND_MILLIS = 1 * 60 * 1000;
 
 export function DeviceDetailScreen({ route }) {
+  useKeepAwake();
+
   const dbContext = React.useContext(SQLiteContext);
   const bleContext = React.useContext(BLEContext);
 
