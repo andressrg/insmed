@@ -4,10 +4,11 @@ import codePush from 'react-native-code-push';
 import { NavigationContainer, DarkTheme } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { useNavigation } from '@react-navigation/native';
+import merge from 'lodash.merge';
 
 import { SQLiteContextProvider } from './components/SQLContext';
 import { BLEContextProvider } from './components/BLEContext';
-import { ThemeContextProvider } from './components/ThemeContext';
+import { ThemeContextProvider, ThemeContext } from './components/ThemeContext';
 import { COLOR_2 } from './components/UI';
 
 import { DevicesListScreen } from './screens/DevicesListScreen';
@@ -43,10 +44,20 @@ function MainStackScreen() {
   );
 }
 
-const AppWithContext = () => (
-  <ThemeContextProvider>
+function AppWithContext() {
+  const themeContext = React.useContext(ThemeContext);
+
+  return (
     <SQLiteContextProvider>
-      <NavigationContainer theme={DarkTheme}>
+      <NavigationContainer
+        theme={React.useMemo(
+          () =>
+            merge(DarkTheme, {
+              colors: { background: themeContext.color.background },
+            }),
+          [themeContext.color.background]
+        )}
+      >
         <BLEContextProvider>
           <RootStack.Navigator mode="modal">
             <RootStack.Screen
@@ -75,13 +86,19 @@ const AppWithContext = () => (
         </BLEContextProvider>
       </NavigationContainer>
     </SQLiteContextProvider>
+  );
+}
+
+const AppWithTheme = () => (
+  <ThemeContextProvider>
+    <AppWithContext />
   </ThemeContextProvider>
 );
 
 export default __DEV__
-  ? AppWithContext
+  ? AppWithTheme
   : codePush({
       checkFrequency: codePush.CheckFrequency.ON_APP_RESUME,
       updateDialog: {},
       installMode: codePush.InstallMode.IMMEDIATE,
-    })(AppWithContext);
+    })(AppWithTheme);

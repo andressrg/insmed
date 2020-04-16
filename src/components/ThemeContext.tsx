@@ -16,11 +16,17 @@ type ITheme = {
   sizes: { sm: number; md: number };
 
   padding: { md: number };
+
+  color: {
+    background: string;
+  };
 };
 
 const sizes = { sm: 8, md: 16 };
 
 const fontSize = { md: 14, lg: 16 };
+
+const color = { background: '#151B2E' };
 
 const DefaultTheme: ITheme = {
   button: {
@@ -38,6 +44,8 @@ const DefaultTheme: ITheme = {
   fontSize,
 
   padding: { md: sizes.md },
+
+  color,
 };
 
 export const ThemeContext = React.createContext<ITheme>(DefaultTheme);

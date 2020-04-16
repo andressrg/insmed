@@ -93,7 +93,14 @@ function TopSection({ onBack }: { onBack: () => void }) {
   const themeContext = React.useContext(ThemeContext);
 
   return (
-    <View style={{ flexDirection: 'row', height: 72, alignItems: 'center' }}>
+    <View
+      style={{
+        flexDirection: 'row',
+        height: 72,
+        alignItems: 'center',
+        paddingHorizontal: themeContext.padding.md,
+      }}
+    >
       <TouchableOpacity
         style={{
           alignItems: 'center',
