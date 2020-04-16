@@ -4,6 +4,7 @@ import {
   View,
   TouchableOpacity,
   Text as RNText,
+  StatusBar,
 } from 'react-native';
 import {
   RecyclerListView,
@@ -31,6 +32,11 @@ import { useScreenDimensions } from '../components/useScreenDimensions';
 import { getLines, correctTs, initCorrectTsRef } from '../utils/charts';
 import { ROW_HEIGHT, ListItem, COLOR_4, COLOR_3 } from '../components/UI';
 import { usePromise } from '../components/usePromise';
+
+const WRAPAROUND_MILLIS = 0.5 * 60 * 1000;
+
+const PRESSURE_AXIS_MIN = -10;
+const PRESSURE_AXIS_MAX = 50;
 
 function Button({ title, onPress }: { title: React.ReactNode; onPress? }) {
   const themeContext = React.useContext(ThemeContext);
@@ -83,10 +89,35 @@ function Variable({ title }: { title: string }) {
   );
 }
 
-const WRAPAROUND_MILLIS = 0.5 * 60 * 1000;
+function TopSection({ onBack }: { onBack: () => void }) {
+  const themeContext = React.useContext(ThemeContext);
 
-const PRESSURE_AXIS_MIN = -10;
-const PRESSURE_AXIS_MAX = 50;
+  return (
+    <View style={{ flexDirection: 'row', height: 72, alignItems: 'center' }}>
+      <TouchableOpacity
+        style={{
+          alignItems: 'center',
+          flexDirection: 'row',
+        }}
+        onPress={onBack}
+      >
+        <Icon name="left" size={15} color="white" />
+
+        <View style={{ width: themeContext.sizes.md }} />
+
+        <RNText
+          style={{
+            color: 'white',
+            fontSize: themeContext.fontSize.lg,
+            fontWeight: 'bold',
+          }}
+        >
+          InnspiraMED
+        </RNText>
+      </TouchableOpacity>
+    </View>
+  );
+}
 
 export function DeviceDetailScreen({ route }) {
   useKeepAwake();
@@ -187,6 +218,14 @@ export function DeviceDetailScreen({ route }) {
 
   return (
     <>
+      <StatusBar hidden />
+
+      <TopSection
+        onBack={() => {
+          navigation.goBack();
+        }}
+      />
+
       <View style={{ flexDirection: 'row', flex: 1 }}>
         <View style={{ flex: 1 }}>
           <View
