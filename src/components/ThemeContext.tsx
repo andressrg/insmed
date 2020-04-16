@@ -11,7 +11,7 @@ type ITheme = {
     };
   };
 
-  fontSize: { md: number };
+  fontSize: { md: number; lg: number };
 
   sizes: { sm: number; md: number };
 
@@ -20,7 +20,7 @@ type ITheme = {
 
 const sizes = { sm: 8, md: 16 };
 
-const fontSize = { md: 14 };
+const fontSize = { md: 14, lg: 16 };
 
 const DefaultTheme: ITheme = {
   button: {

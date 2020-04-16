@@ -59,6 +59,30 @@ function Button({ title, onPress }: { title: React.ReactNode; onPress? }) {
   );
 }
 
+function Variable({ title }: { title: string }) {
+  const themeContext = React.useContext(ThemeContext);
+
+  return (
+    <View>
+      <RNText style={{ color: 'white', fontSize: themeContext.fontSize.lg }}>
+        {title}
+      </RNText>
+
+      <RNText
+        style={{
+          color: '#394773',
+          fontSize: themeContext.fontSize.md,
+          textAlign: 'right',
+          borderTopColor: '#8CC2FE',
+          borderTopWidth: 1,
+        }}
+      >
+        XX.X
+      </RNText>
+    </View>
+  );
+}
+
 const WRAPAROUND_MILLIS = 0.5 * 60 * 1000;
 
 const PRESSURE_AXIS_MIN = -10;
@@ -163,148 +187,170 @@ export function DeviceDetailScreen({ route }) {
 
   return (
     <>
-      <View
-        onLayout={(ev) => {
-          setViewSize({
-            height: ev.nativeEvent.layout.height,
-            width: ev.nativeEvent.layout.width,
-          });
-        }}
-        style={{ position: 'relative', flex: 1 }}
-      >
-        {viewSize.height != null && viewSize.width != null && (
+      <View style={{ flexDirection: 'row', flex: 1 }}>
+        <View style={{ flex: 1 }}>
           <View
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              height: '100%',
-              width: '100%',
+            onLayout={(ev) => {
+              setViewSize({
+                height: ev.nativeEvent.layout.height,
+                width: ev.nativeEvent.layout.width,
+              });
             }}
+            style={{ position: 'relative', flex: 1 }}
           >
-            <VictoryChart
-              domainPadding={20}
-              domain={{ x: [0, WRAPAROUND_MILLIS] }}
-              height={viewSize.height}
-              width={viewSize.width}
-              padding={{ left: 50 }}
-              theme={merge(VictoryTheme.material, {
-                axis: { style: { tickLabels: { fill: COLOR_3 } } },
-              })}
+            {viewSize.height != null && viewSize.width != null && (
+              <View
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  height: '100%',
+                  width: '100%',
+                }}
+              >
+                <VictoryChart
+                  domainPadding={20}
+                  domain={{ x: [0, WRAPAROUND_MILLIS] }}
+                  height={viewSize.height}
+                  width={viewSize.width}
+                  padding={{ left: 50 }}
+                  theme={merge(VictoryTheme.material, {
+                    axis: { style: { tickLabels: { fill: COLOR_3 } } },
+                  })}
+                >
+                  <VictoryLine
+                    style={{ data: { stroke: COLOR_3 } }}
+                    data={background ?? []}
+                  />
+                  <VictoryLine
+                    style={{ data: { stroke: COLOR_4 } }}
+                    data={foreground ?? []}
+                  />
+
+                  <VictoryAxis
+                    dependentAxis
+                    domain={{
+                      y: [PRESSURE_AXIS_MIN, PRESSURE_AXIS_MAX],
+                    }}
+                  />
+                </VictoryChart>
+              </View>
+            )}
+
+            {/* <View
+              style={{
+                position: 'absolute',
+                top: 0,
+                right: 0,
+                zIndex: 9999,
+              }}
             >
-              <VictoryLine
-                style={{ data: { stroke: COLOR_3 } }}
-                data={background ?? []}
-              />
-              <VictoryLine
-                style={{ data: { stroke: COLOR_4 } }}
-                data={foreground ?? []}
+              <Button
+                onPress={async () => {
+                  console.log(
+                    'qowidjqoiwdjqw',
+                    bleContext.connectedDeviceIds![deviceId].deviceHardwareId,
+                    bleContext.connectedDeviceIds![deviceId].characteristic
+                      .serviceUUID,
+                    bleContext.connectedDeviceIds![deviceId].characteristic
+                      .uuid,
+                    encode('a1;')
+                  );
+
+                  console.log(
+                    await bleContext.writeCharacteristicWithoutResponseForDevice!(
+                      bleContext.connectedDeviceIds![deviceId].deviceHardwareId,
+                      bleContext.connectedDeviceIds![deviceId].characteristic
+                        .serviceUUID,
+                      bleContext.connectedDeviceIds![deviceId].characteristic
+                        .uuid,
+                      encode('i30p20;')
+                    )
+                  );
+                }}
+                title="1"
               />
 
-              <VictoryAxis
-                dependentAxis
-                domain={{
-                  y: [PRESSURE_AXIS_MIN, PRESSURE_AXIS_MAX],
+              <Button
+                onPress={async () => {
+                  console.log(
+                    await bleContext.writeCharacteristicWithoutResponseForDevice!(
+                      bleContext.connectedDeviceIds![deviceId].deviceHardwareId,
+                      bleContext.connectedDeviceIds![deviceId].characteristic
+                        .serviceUUID,
+                      bleContext.connectedDeviceIds![deviceId].characteristic
+                        .uuid,
+                      encode('p40;')
+                    )
+                  );
                 }}
+                title="100"
               />
-            </VictoryChart>
+
+              <Button
+                onPress={async () => {
+                  await bleContext.writeCharacteristicWithoutResponseForDevice!(
+                    bleContext.connectedDeviceIds![deviceId].deviceHardwareId,
+                    bleContext.connectedDeviceIds![deviceId].characteristic
+                      .serviceUUID,
+                    bleContext.connectedDeviceIds![deviceId].characteristic
+                      .uuid,
+                    encode('s')
+                  );
+                }}
+                title="s"
+              />
+
+              <TouchableOpacity
+                onPress={() => {
+                  navigation.goBack();
+                }}
+                style={{ padding: 10 }}
+              >
+                <Icon
+                  name="close"
+                  size={20}
+                  backgroundColor="transparent"
+                  color={COLOR_4}
+                />
+              </TouchableOpacity>
+            </View> */}
           </View>
-        )}
+
+          <View
+            style={{
+              alignItems: 'flex-start',
+              justifyContent: 'center',
+              padding: themeContext.padding.md,
+
+              flexDirection: 'row',
+            }}
+          >
+            <Button title="P. Control" />
+
+            <View style={{ width: themeContext.sizes.sm }} />
+
+            <Button title="BPM" />
+
+            <View style={{ width: themeContext.sizes.sm }} />
+
+            <Button title="Rel: I:E" />
+          </View>
+        </View>
 
         <View
           style={{
-            position: 'absolute',
-            top: 0,
-            right: 0,
-            zIndex: 9999,
+            width: 160,
+            justifyContent: 'space-around',
+            paddingHorizontal: themeContext.sizes.sm,
           }}
         >
-          <Button
-            onPress={async () => {
-              console.log(
-                'qowidjqoiwdjqw',
-                bleContext.connectedDeviceIds![deviceId].deviceHardwareId,
-                bleContext.connectedDeviceIds![deviceId].characteristic
-                  .serviceUUID,
-                bleContext.connectedDeviceIds![deviceId].characteristic.uuid,
-                encode('a1;')
-              );
-
-              console.log(
-                await bleContext.writeCharacteristicWithoutResponseForDevice!(
-                  bleContext.connectedDeviceIds![deviceId].deviceHardwareId,
-                  bleContext.connectedDeviceIds![deviceId].characteristic
-                    .serviceUUID,
-                  bleContext.connectedDeviceIds![deviceId].characteristic.uuid,
-                  encode('i30p20;')
-                )
-              );
-            }}
-            title="1"
-          />
-
-          <Button
-            onPress={async () => {
-              console.log(
-                await bleContext.writeCharacteristicWithoutResponseForDevice!(
-                  bleContext.connectedDeviceIds![deviceId].deviceHardwareId,
-                  bleContext.connectedDeviceIds![deviceId].characteristic
-                    .serviceUUID,
-                  bleContext.connectedDeviceIds![deviceId].characteristic.uuid,
-                  encode('p40;')
-                )
-              );
-            }}
-            title="100"
-          />
-
-          <Button
-            onPress={async () => {
-              await bleContext.writeCharacteristicWithoutResponseForDevice!(
-                bleContext.connectedDeviceIds![deviceId].deviceHardwareId,
-                bleContext.connectedDeviceIds![deviceId].characteristic
-                  .serviceUUID,
-                bleContext.connectedDeviceIds![deviceId].characteristic.uuid,
-                encode('s')
-              );
-            }}
-            title="s"
-          />
-
-          <TouchableOpacity
-            onPress={() => {
-              navigation.goBack();
-            }}
-            style={{ padding: 10 }}
-          >
-            <Icon
-              name="close"
-              size={20}
-              backgroundColor="transparent"
-              color={COLOR_4}
-            />
-          </TouchableOpacity>
+          <Variable title="PIP" />
+          <Variable title="PEEP" />
+          <Variable title="t.IN" />
+          <Variable title="t.EX" />
+          <Variable title="Ciclos" />
         </View>
-      </View>
-
-      <View
-        style={{
-          alignItems: 'flex-start',
-          justifyContent: 'center',
-          padding: themeContext.padding.md,
-
-          flexDirection: 'row',
-        }}
-      >
-        <Button title="P. Control" />
-
-        <View style={{ width: themeContext.sizes.sm }} />
-
-        <Button title="BPM" />
-
-        <View style={{ width: themeContext.sizes.sm }} />
-
-        <Button title="Rel: I:E" />
       </View>
     </>
   );
