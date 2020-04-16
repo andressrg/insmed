@@ -1,5 +1,5 @@
 import React from 'react';
-import { RefreshControl, View, TouchableOpacity } from 'react-native';
+import { RefreshControl, View, TouchableOpacity, Button } from 'react-native';
 import {
   RecyclerListView,
   DataProvider,
@@ -16,8 +16,11 @@ import * as ScreenOrientation from 'expo-screen-orientation';
 import Icon from 'react-native-vector-icons/AntDesign';
 import { useNavigation } from '@react-navigation/native';
 import merge from 'lodash.merge';
+import { encode } from 'base-64';
+import { useKeepAwake } from 'expo-keep-awake';
 
 import { SQLiteContext } from '../components/SQLContext';
+import { BLEContext } from '../components/BLEContext';
 import { useScreenDimensions } from '../components/useScreenDimensions';
 import { getLines, correctTs, initCorrectTsRef } from '../utils/charts';
 import { ROW_HEIGHT, ListItem, COLOR_4, COLOR_3 } from '../components/UI';
@@ -26,7 +29,10 @@ import { usePromise } from '../components/usePromise';
 const WRAPAROUND_MILLIS = 1 * 60 * 1000;
 
 export function DeviceDetailScreen({ route }) {
+  useKeepAwake();
+
   const dbContext = React.useContext(SQLiteContext);
+  const bleContext = React.useContext(BLEContext);
 
   const navigation = useNavigation();
 
@@ -169,6 +175,58 @@ export function DeviceDetailScreen({ route }) {
             zIndex: 9999,
           }}
         >
+          <Button
+            onPress={async () => {
+              console.log(
+                'qowidjqoiwdjqw',
+                bleContext.connectedDeviceIds![deviceId].deviceHardwareId,
+                bleContext.connectedDeviceIds![deviceId].characteristic
+                  .serviceUUID,
+                bleContext.connectedDeviceIds![deviceId].characteristic.uuid,
+                encode('a1;')
+              );
+
+              console.log(
+                await bleContext.writeCharacteristicWithoutResponseForDevice!(
+                  bleContext.connectedDeviceIds![deviceId].deviceHardwareId,
+                  bleContext.connectedDeviceIds![deviceId].characteristic
+                    .serviceUUID,
+                  bleContext.connectedDeviceIds![deviceId].characteristic.uuid,
+                  encode('i30p20;')
+                )
+              );
+            }}
+            title="1"
+          />
+
+          <Button
+            onPress={async () => {
+              console.log(
+                await bleContext.writeCharacteristicWithoutResponseForDevice!(
+                  bleContext.connectedDeviceIds![deviceId].deviceHardwareId,
+                  bleContext.connectedDeviceIds![deviceId].characteristic
+                    .serviceUUID,
+                  bleContext.connectedDeviceIds![deviceId].characteristic.uuid,
+                  encode('p40;')
+                )
+              );
+            }}
+            title="100"
+          />
+
+          <Button
+            onPress={async () => {
+              await bleContext.writeCharacteristicWithoutResponseForDevice!(
+                bleContext.connectedDeviceIds![deviceId].deviceHardwareId,
+                bleContext.connectedDeviceIds![deviceId].characteristic
+                  .serviceUUID,
+                bleContext.connectedDeviceIds![deviceId].characteristic.uuid,
+                encode('s')
+              );
+            }}
+            title="s"
+          />
+
           <TouchableOpacity
             onPress={() => {
               navigation.goBack();

@@ -14,7 +14,9 @@ export async function validateDevice({
 > {
   const deviceId = device.id;
 
-  await manager.connectToDevice(deviceId);
+  if ((await manager.isDeviceConnected(deviceId)) === false) {
+    await manager.connectToDevice(deviceId);
+  }
 
   if (signal.aborted) {
     manager.cancelDeviceConnection(deviceId);
@@ -45,6 +47,8 @@ export async function validateDevice({
     manager.cancelDeviceConnection(deviceId);
     return;
   }
+
+  // await manager.cancelDeviceConnection(deviceId);
 
   const uartCharacteristic = characteristics.find(
     (char) => char.uuid.toLowerCase() === UART_CHARACTERISTIC_UUID.toLowerCase()
