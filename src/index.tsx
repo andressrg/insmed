@@ -7,6 +7,7 @@ import { useNavigation } from '@react-navigation/native';
 
 import { SQLiteContextProvider } from './components/SQLContext';
 import { BLEContextProvider } from './components/BLEContext';
+import { ThemeContextProvider } from './components/ThemeContext';
 import { COLOR_2 } from './components/UI';
 
 import { DevicesListScreen } from './screens/DevicesListScreen';
@@ -43,36 +44,38 @@ function MainStackScreen() {
 }
 
 const AppWithContext = () => (
-  <SQLiteContextProvider>
-    <NavigationContainer theme={DarkTheme}>
-      <BLEContextProvider>
-        <RootStack.Navigator mode="modal">
-          <RootStack.Screen
-            name="Main"
-            component={MainStackScreen}
-            options={{ headerShown: false }}
-          />
+  <ThemeContextProvider>
+    <SQLiteContextProvider>
+      <NavigationContainer theme={DarkTheme}>
+        <BLEContextProvider>
+          <RootStack.Navigator mode="modal">
+            <RootStack.Screen
+              name="Main"
+              component={MainStackScreen}
+              options={{ headerShown: false }}
+            />
 
-          <RootStack.Screen
-            name="DeviceScan"
-            options={{
-              title: 'Dispositivos cercanos',
-            }}
-            component={DeviceScanScreen}
-          />
+            <RootStack.Screen
+              name="DeviceScan"
+              options={{
+                title: 'Dispositivos cercanos',
+              }}
+              component={DeviceScanScreen}
+            />
 
-          <RootStack.Screen
-            name="DeviceDetail"
-            options={{
-              title: 'Dispositivo',
-              headerShown: false,
-            }}
-            component={DeviceDetailScreen}
-          />
-        </RootStack.Navigator>
-      </BLEContextProvider>
-    </NavigationContainer>
-  </SQLiteContextProvider>
+            <RootStack.Screen
+              name="DeviceDetail"
+              options={{
+                title: 'Dispositivo',
+                headerShown: false,
+              }}
+              component={DeviceDetailScreen}
+            />
+          </RootStack.Navigator>
+        </BLEContextProvider>
+      </NavigationContainer>
+    </SQLiteContextProvider>
+  </ThemeContextProvider>
 );
 
 export default __DEV__

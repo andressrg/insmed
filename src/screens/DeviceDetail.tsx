@@ -1,5 +1,10 @@
 import React from 'react';
-import { RefreshControl, View, TouchableOpacity, Button } from 'react-native';
+import {
+  RefreshControl,
+  View,
+  TouchableOpacity,
+  Text as RNText,
+} from 'react-native';
 import {
   RecyclerListView,
   DataProvider,
@@ -20,11 +25,39 @@ import { encode } from 'base-64';
 import { useKeepAwake } from 'expo-keep-awake';
 
 import { SQLiteContext } from '../components/SQLContext';
+import { ThemeContext } from '../components/ThemeContext';
 import { BLEContext } from '../components/BLEContext';
 import { useScreenDimensions } from '../components/useScreenDimensions';
 import { getLines, correctTs, initCorrectTsRef } from '../utils/charts';
 import { ROW_HEIGHT, ListItem, COLOR_4, COLOR_3 } from '../components/UI';
 import { usePromise } from '../components/usePromise';
+
+function Button({ title, onPress }: { title: React.ReactNode; onPress? }) {
+  const themeContext = React.useContext(ThemeContext);
+
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      style={{
+        backgroundColor: themeContext.button.primary.backgroundColor,
+        borderRadius: themeContext.button.primary.borderRadius,
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: themeContext.button.primary.height,
+        flex: 1,
+      }}
+    >
+      <RNText
+        style={{
+          color: themeContext.button.primary.color,
+          fontSize: themeContext.button.primary.fontSize,
+        }}
+      >
+        {title}
+      </RNText>
+    </TouchableOpacity>
+  );
+}
 
 const WRAPAROUND_MILLIS = 0.5 * 60 * 1000;
 
@@ -36,6 +69,8 @@ export function DeviceDetailScreen({ route }) {
 
   const dbContext = React.useContext(SQLiteContext);
   const bleContext = React.useContext(BLEContext);
+
+  const themeContext = React.useContext(ThemeContext);
 
   const navigation = useNavigation();
 
@@ -106,6 +141,7 @@ export function DeviceDetailScreen({ route }) {
         })()
       );
     }, 500);
+
     return () => clearInterval(key);
   }, [deviceId, getMeasurements, setPromise]);
 
@@ -249,6 +285,26 @@ export function DeviceDetailScreen({ route }) {
             />
           </TouchableOpacity>
         </View>
+      </View>
+
+      <View
+        style={{
+          alignItems: 'flex-start',
+          justifyContent: 'center',
+          padding: themeContext.padding.md,
+
+          flexDirection: 'row',
+        }}
+      >
+        <Button title="P. Control" />
+
+        <View style={{ width: themeContext.sizes.sm }} />
+
+        <Button title="BPM" />
+
+        <View style={{ width: themeContext.sizes.sm }} />
+
+        <Button title="Rel: I:E" />
       </View>
     </>
   );
