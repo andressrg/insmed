@@ -105,7 +105,7 @@ export function DeviceDetailScreen({ route }) {
           return result;
         })()
       );
-    }, 1000);
+    }, 500);
     return () => clearInterval(key);
   }, [deviceId, getMeasurements, setPromise]);
 
