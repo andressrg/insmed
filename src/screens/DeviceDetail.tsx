@@ -26,7 +26,7 @@ import { getLines, correctTs, initCorrectTsRef } from '../utils/charts';
 import { ROW_HEIGHT, ListItem, COLOR_4, COLOR_3 } from '../components/UI';
 import { usePromise } from '../components/usePromise';
 
-const WRAPAROUND_MILLIS = 1 * 60 * 1000;
+const WRAPAROUND_MILLIS = 0.5 * 60 * 1000;
 
 const PRESSURE_AXIS_MIN = -10;
 const PRESSURE_AXIS_MAX = 50;
