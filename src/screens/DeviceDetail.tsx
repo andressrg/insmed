@@ -28,6 +28,9 @@ import { usePromise } from '../components/usePromise';
 
 const WRAPAROUND_MILLIS = 1 * 60 * 1000;
 
+const PRESSURE_AXIS_MIN = -10;
+const PRESSURE_AXIS_MAX = 50;
+
 export function DeviceDetailScreen({ route }) {
   useKeepAwake();
 
@@ -162,7 +165,12 @@ export function DeviceDetailScreen({ route }) {
                 data={foreground ?? []}
               />
 
-              <VictoryAxis dependentAxis />
+              <VictoryAxis
+                dependentAxis
+                domain={{
+                  y: [PRESSURE_AXIS_MIN, PRESSURE_AXIS_MAX],
+                }}
+              />
             </VictoryChart>
           </View>
         )}
