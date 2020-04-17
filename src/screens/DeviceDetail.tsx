@@ -202,7 +202,7 @@ export function DeviceDetailScreen({ route }) {
           return result;
         })()
       );
-    }, 500);
+    }, 200);
 
     return () => clearInterval(key);
   }, [deviceId, getMeasurements, setPromise]);
