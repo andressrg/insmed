@@ -202,7 +202,7 @@ export function DeviceDetailScreen({ route }) {
           return result;
         })()
       );
-    }, 200);
+    }, 1000);
 
     return () => clearInterval(key);
   }, [deviceId, getMeasurements, setPromise]);
@@ -222,6 +222,9 @@ export function DeviceDetailScreen({ route }) {
     height?: number;
     width?: number;
   }>({});
+
+  const connectedDevice =
+    bleContext.connectedDeviceIds && bleContext.connectedDeviceIds[deviceId];
 
   return (
     <>
@@ -372,15 +375,23 @@ export function DeviceDetailScreen({ route }) {
               flexDirection: 'row',
             }}
           >
-            <Button title="P. Control" />
+            <Button
+              title={`P. Control ${connectedDevice?.presControl ?? '-'}`}
+            />
 
             <View style={{ width: themeContext.sizes.sm }} />
 
-            <Button title="BPM" />
+            <Button title={`BPM ${connectedDevice?.bpm ?? '-'}`} />
 
             <View style={{ width: themeContext.sizes.sm }} />
 
-            <Button title="Rel: I:E" />
+            <Button
+              title={`Rel: I:E 1:${
+                connectedDevice?.ieRatio == null
+                  ? '-'
+                  : connectedDevice?.ieRatio / 10
+              }`}
+            />
           </View>
         </View>
 

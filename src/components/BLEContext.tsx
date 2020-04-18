@@ -113,7 +113,7 @@ function CharacteristicConnection({
           encode('h')
         );
 
-        const interval = setInterval(async () => {
+        const keepAliveInterval = setInterval(async () => {
           await manager.writeCharacteristicWithoutResponseForDevice!(
             deviceHardwareId,
             characteristic.serviceUUID,
@@ -122,7 +122,18 @@ function CharacteristicConnection({
           );
         }, 3 * 1000);
 
-        deactivators.push(() => clearInterval(interval));
+        deactivators.push(() => clearInterval(keepAliveInterval));
+
+        const parametersInterval = setInterval(async () => {
+          await manager.writeCharacteristicWithoutResponseForDevice!(
+            deviceHardwareId,
+            characteristic.serviceUUID,
+            characteristic.uuid,
+            encode('s;')
+          );
+        }, 3 * 1000);
+
+        deactivators.push(() => clearInterval(parametersInterval));
 
         if (controller.signal.aborted) return;
 
@@ -235,6 +246,10 @@ export function BLEContextProvider({
           [k: string]: {
             deviceHardwareId;
             characteristic: Characteristic;
+
+            presControl?: number;
+            bpm?: number;
+            ieRatio?: number;
           };
         }
       ),
