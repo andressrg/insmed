@@ -207,6 +207,8 @@ export function DeviceDetailScreen({ route }) {
     return () => clearInterval(key);
   }, [deviceId, getMeasurements, setPromise]);
 
+  // console.log('plotData', plotData);
+
   const foreground = plotData?.foreground;
   const background = React.useMemo(
     () =>
