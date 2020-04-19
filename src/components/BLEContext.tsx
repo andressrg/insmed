@@ -6,6 +6,11 @@ import produce from 'immer';
 import { SQLiteContext } from './SQLContext';
 import { parseData } from '../utils';
 
+type writePresControlType = ({
+  deviceId: string,
+  value: number,
+}) => Promise<void>;
+
 export const BLEContext = React.createContext<{
   manager?: BleManager;
 
@@ -28,13 +33,7 @@ export const BLEContext = React.createContext<{
     };
   };
 
-  writeCharacteristicWithoutResponseForDevice?: (
-    deviceIdentifier,
-    serviceUUID,
-    characteristicUUID,
-    base64Value,
-    transactionId?
-  ) => Promise<any>;
+  writePresControl?: writePresControlType;
 }>({});
 
 class CharacteristicsErrorBoundary extends React.Component {
@@ -310,15 +309,39 @@ export function BLEContextProvider({
     setCharacteristics((state) => state.filter((i) => i.deviceId !== deviceId));
   }, []);
 
+  const writePresControl: writePresControlType = React.useCallback(
+    async ({ deviceId, value }) => {
+      const val = characteristics.find((c) => c.deviceId === deviceId);
+
+      if (val == null) return;
+
+      const { deviceHardwareId, characteristic } = val;
+
+      console.log(
+        'qwoidjq',
+        deviceHardwareId,
+        characteristic.serviceUUID,
+        characteristic.uuid,
+        encode(`p${value};`)
+      );
+
+      await manager!.writeCharacteristicWithoutResponseForDevice!(
+        deviceHardwareId,
+        characteristic.serviceUUID,
+        characteristic.uuid,
+        encode(`p${value};`)
+      );
+    },
+    [characteristics, manager]
+  );
+
   return manager == null ? null : (
     <BLEContext.Provider
       value={{
         manager,
         connectToCharacteristic,
         connectedDeviceIds,
-
-        writeCharacteristicWithoutResponseForDevice: (...args) =>
-          manager.writeCharacteristicWithResponseForDevice(...args),
+        writePresControl,
       }}
     >
       {children}
