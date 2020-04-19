@@ -1,6 +1,21 @@
 import 'react-native';
 import { parseData } from '../../src/utils';
 
+it('works for incomplete data', () => {
+  test(
+    ['sp', '10;'],
+    [
+      {
+        pressure: [],
+      },
+      {
+        pressure: [],
+        presControl: 10,
+      },
+    ]
+  );
+});
+
 it('Should parse data', () => {
   test(
     ['t2831p10.2;t3131p12.2;t3531p14.2;'],
@@ -36,39 +51,37 @@ it('Should parse data', () => {
   );
 
   test(
-    ['t2831p10.2;t3131', 'p12.2;t3531p14.2'],
+    ['t2831p10.2;t3131', 'p12.2;t3531p14.2', ';'],
     [
       { pressure: [{ t: 2831, p: 10.2 }] },
+      { pressure: [{ t: 3131, p: 12.2 }] },
       {
-        pressure: [
-          { t: 3131, p: 12.2 },
-          { t: 3531, p: 14.2 },
-        ],
+        pressure: [{ t: 3531, p: 14.2 }],
       },
     ]
   );
   test(
-    ['t283', '1p10.2;t3131p12.2;t3531p14.2'],
+    ['t283', '1p10.2;t3131p12.2;t3531p14.2', ';'],
     [
       { pressure: [] },
       {
         pressure: [
           { t: 2831, p: 10.2 },
           { t: 3131, p: 12.2 },
-          { t: 3531, p: 14.2 },
         ],
       },
+      { pressure: [{ t: 3531, p: 14.2 }] },
     ]
   );
   test(
-    ['t283', '0.2;t3131p12.2;t3531p14.2'],
+    ['t283', '0.2;t3131p12.2;t3531p14.2', ';'],
     [
       { pressure: [] },
       {
-        pressure: [
-          { t: 3131, p: 12.2 },
-          { t: 3531, p: 14.2 },
-        ],
+        pressure: [{ t: 3131, p: 12.2 }],
+      },
+      {
+        pressure: [{ t: 3531, p: 14.2 }],
       },
     ]
   );
@@ -78,12 +91,9 @@ it('Should parse data', () => {
     [
       { pressure: [] },
       {
-        pressure: [
-          { t: 3131, p: 12.2 },
-          { t: 3531, p: 14.2 },
-        ],
+        pressure: [{ t: 3131, p: 12.2 }],
       },
-      { pressure: [] },
+      { pressure: [{ t: 3531, p: 14.2 }] },
     ]
   );
   test(
@@ -91,12 +101,9 @@ it('Should parse data', () => {
     [
       { pressure: [] },
       {
-        pressure: [
-          { t: 3131, p: 12.2 },
-          { t: 3531, p: 14.2 },
-        ],
+        pressure: [{ t: 3131, p: 12.2 }],
       },
-      { pressure: [] },
+      { pressure: [{ t: 3531, p: 14.2 }] },
     ]
   );
 });
