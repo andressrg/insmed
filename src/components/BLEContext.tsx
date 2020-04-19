@@ -6,6 +6,11 @@ import produce from 'immer';
 import { SQLiteContext } from './SQLContext';
 import { parseData } from '../utils';
 
+type writePresControlType = ({
+  deviceId: string,
+  value: number,
+}) => Promise<void>;
+
 export const BLEContext = React.createContext<{
   manager?: BleManager;
 
@@ -28,13 +33,7 @@ export const BLEContext = React.createContext<{
     };
   };
 
-  writeCharacteristicWithoutResponseForDevice?: (
-    deviceIdentifier,
-    serviceUUID,
-    characteristicUUID,
-    base64Value,
-    transactionId?
-  ) => Promise<any>;
+  writePresControl?: writePresControlType;
 }>({});
 
 class CharacteristicsErrorBoundary extends React.Component {
@@ -113,7 +112,7 @@ function CharacteristicConnection({
           encode('h')
         );
 
-        const interval = setInterval(async () => {
+        const keepAliveInterval = setInterval(async () => {
           await manager.writeCharacteristicWithoutResponseForDevice!(
             deviceHardwareId,
             characteristic.serviceUUID,
@@ -122,7 +121,18 @@ function CharacteristicConnection({
           );
         }, 3 * 1000);
 
-        deactivators.push(() => clearInterval(interval));
+        deactivators.push(() => clearInterval(keepAliveInterval));
+
+        const parametersInterval = setInterval(async () => {
+          await manager.writeCharacteristicWithoutResponseForDevice!(
+            deviceHardwareId,
+            characteristic.serviceUUID,
+            characteristic.uuid,
+            encode('s;')
+          );
+        }, 3 * 1000);
+
+        deactivators.push(() => clearInterval(parametersInterval));
 
         if (controller.signal.aborted) return;
 
@@ -235,6 +245,10 @@ export function BLEContextProvider({
           [k: string]: {
             deviceHardwareId;
             characteristic: Characteristic;
+
+            presControl?: number;
+            bpm?: number;
+            ieRatio?: number;
           };
         }
       ),
@@ -295,15 +309,31 @@ export function BLEContextProvider({
     setCharacteristics((state) => state.filter((i) => i.deviceId !== deviceId));
   }, []);
 
+  const writePresControl: writePresControlType = React.useCallback(
+    async ({ deviceId, value }) => {
+      const val = characteristics.find((c) => c.deviceId === deviceId);
+
+      if (val == null) return;
+
+      const { deviceHardwareId, characteristic } = val;
+
+      await manager!.writeCharacteristicWithoutResponseForDevice!(
+        deviceHardwareId,
+        characteristic.serviceUUID,
+        characteristic.uuid,
+        encode(`p${value};`)
+      );
+    },
+    [characteristics, manager]
+  );
+
   return manager == null ? null : (
     <BLEContext.Provider
       value={{
         manager,
         connectToCharacteristic,
         connectedDeviceIds,
-
-        writeCharacteristicWithoutResponseForDevice: (...args) =>
-          manager.writeCharacteristicWithResponseForDevice(...args),
+        writePresControl,
       }}
     >
       {children}

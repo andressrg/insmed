@@ -396,7 +396,7 @@ export function SQLiteContextProvider({
 
             return { id: deviceId };
           },
-          [dbPromise.promise, devicesAsync.reload]
+          [dbPromise.promise, devicesAsync]
         ),
       }}
     >

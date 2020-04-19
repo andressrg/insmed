@@ -16,17 +16,24 @@ export const parseData = ({
   bpm?: number;
   ieRatio?: number;
 } => {
-  const array = data.split(';').filter((s) => s !== '');
+  const dataToParse = cacheRef.current + data;
+  cacheRef.current = '';
+  let array = dataToParse.split(';').filter((s) => s !== '');
 
-  let presControl: number;
-  let bpm: number;
-  let ieRatio: number;
+  const endsWithColon = dataToParse.endsWith(';');
+  let lastItem: string | undefined;
+  if (endsWithColon === false) {
+    lastItem = array.slice(-1)[0];
+    array = array.slice(0, -1);
+  }
+
+  let presControl: number | undefined;
+  let bpm: number | undefined;
+  let ieRatio: number | undefined;
 
   let dataArray: IData[] = [];
 
   for (let item of array) {
-    item = cacheRef.current + item;
-
     if (item.startsWith('sp')) {
       const itemNoS = item.replace('sp', '');
 
@@ -50,18 +57,18 @@ export const parseData = ({
       const indexOfT: number = item.indexOf('t');
 
       if (indexOfP >= 0) {
-        const p = item.slice(indexOfP + 1, item.length);
-        const t = item.slice(indexOfT + 1, indexOfP);
+        const p = parseFloat(item.slice(indexOfP + 1, item.length));
+        const t = parseInt(item.slice(indexOfT + 1, indexOfP), 10);
 
-        cacheRef.current = '';
-
-        dataArray.push({ t: parseInt(t, 10), p: parseFloat(p) });
-      } else if (indexOfP < 0 && cacheRef.current !== '') {
-        cacheRef.current = '';
-      } else {
-        cacheRef.current = item.slice(indexOfT, item.length);
+        if (!Number.isNaN(t) && !Number.isNaN(p)) {
+          dataArray.push({ t, p });
+        }
       }
     }
+  }
+
+  if (lastItem != null) {
+    cacheRef.current += lastItem ?? '';
   }
 
   return {

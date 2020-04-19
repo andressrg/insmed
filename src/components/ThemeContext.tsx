@@ -7,11 +7,11 @@ type ITheme = {
       color: string;
       borderRadius: number;
       height: number;
-      fontSize: number;
+      fontSize: { md: number; lg: number };
     };
   };
 
-  fontSize: { md: number; lg: number };
+  fontSize: { md: number; lg: number; xl: number };
 
   sizes: { sm: number; md: number };
 
@@ -24,7 +24,7 @@ type ITheme = {
 
 const sizes = { sm: 8, md: 16 };
 
-const fontSize = { md: 14, lg: 16 };
+const fontSize = { md: 14, lg: 16, xl: 32 };
 
 const color = { background: '#151B2E' };
 
@@ -35,7 +35,7 @@ const DefaultTheme: ITheme = {
       color: 'white',
       borderRadius: 4,
       height: 41,
-      fontSize: fontSize.md,
+      fontSize,
     },
   },
 

@@ -38,14 +38,33 @@ const WRAPAROUND_MILLIS = 0.5 * 60 * 1000;
 const PRESSURE_AXIS_MIN = -10;
 const PRESSURE_AXIS_MAX = 50;
 
-function Button({ title, onPress }: { title: React.ReactNode; onPress? }) {
+function Button({
+  title,
+  onPress,
+  category = 'primary',
+  size = 'md',
+}: {
+  title: React.ReactNode;
+  onPress?;
+  category?: 'primary' | 'outline-primary';
+  size?: 'md' | 'lg' | 'xl';
+}) {
   const themeContext = React.useContext(ThemeContext);
 
   return (
     <TouchableOpacity
       onPress={onPress}
       style={{
-        backgroundColor: themeContext.button.primary.backgroundColor,
+        backgroundColor: {
+          primary: themeContext.button.primary.backgroundColor,
+        }[category],
+        borderColor: {
+          'outline-primary': themeContext.button.primary.backgroundColor,
+        }[category],
+        borderWidth: {
+          'outline-primary': 1,
+        }[category],
+
         borderRadius: themeContext.button.primary.borderRadius,
         alignItems: 'center',
         justifyContent: 'center',
@@ -56,7 +75,7 @@ function Button({ title, onPress }: { title: React.ReactNode; onPress? }) {
       <RNText
         style={{
           color: themeContext.button.primary.color,
-          fontSize: themeContext.button.primary.fontSize,
+          fontSize: themeContext.button.primary.fontSize[size],
         }}
       >
         {title}
@@ -126,25 +145,8 @@ function TopSection({ onBack }: { onBack: () => void }) {
   );
 }
 
-export function DeviceDetailScreen({ route }) {
-  useKeepAwake();
-
+function Plot({ deviceId }: { deviceId: string }) {
   const dbContext = React.useContext(SQLiteContext);
-  const bleContext = React.useContext(BLEContext);
-
-  const themeContext = React.useContext(ThemeContext);
-
-  const navigation = useNavigation();
-
-  const { deviceId } = route.params;
-
-  React.useEffect(() => {
-    ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
-
-    return () => {
-      ScreenOrientation.unlockAsync();
-    };
-  }, []);
 
   const getMeasurements = dbContext.getMeasurements!;
 
@@ -162,7 +164,7 @@ export function DeviceDetailScreen({ route }) {
     pendingRef.current = plotDataPending;
   });
 
-  const contextRef = React.useRef(initCorrectTsRef());
+  const pressureDataContextRef = React.useRef(initCorrectTsRef());
   const cursorRef = React.useRef<number>();
 
   React.useEffect(() => {
@@ -188,12 +190,14 @@ export function DeviceDetailScreen({ route }) {
 
           const result = getLines({
             wraparoundMillis: WRAPAROUND_MILLIS,
-            contextRef,
-            data: correctTs({ contextRef, data }).map((p) => ({
-              ts: p.ts,
-              id: p.raw.id,
-              y: p.raw.y,
-            })),
+            contextRef: pressureDataContextRef,
+            data: correctTs({ contextRef: pressureDataContextRef, data }).map(
+              (p) => ({
+                ts: p.ts,
+                id: p.raw.id,
+                y: p.raw.y,
+              })
+            ),
           });
 
           cursorRef.current =
@@ -202,10 +206,15 @@ export function DeviceDetailScreen({ route }) {
           return result;
         })()
       );
-    }, 200);
+    }, 1000);
 
     return () => clearInterval(key);
   }, [deviceId, getMeasurements, setPromise]);
+
+  const [viewSize, setViewSize] = React.useState<{
+    height?: number;
+    width?: number;
+  }>({});
 
   const foreground = plotData?.foreground;
   const background = React.useMemo(
@@ -213,15 +222,180 @@ export function DeviceDetailScreen({ route }) {
       foreground == null
         ? plotData?.background
         : (plotData?.background ?? []).filter(
-            (p) => foreground[foreground.length - 1].x < p.x
+            (p) =>
+              foreground[foreground.length - 1] != null &&
+              foreground[foreground.length - 1].x < p.x
           ),
     [foreground, plotData]
   );
 
-  const [viewSize, setViewSize] = React.useState<{
-    height?: number;
-    width?: number;
-  }>({});
+  return (
+    <View
+      onLayout={(ev) => {
+        setViewSize({
+          height: ev.nativeEvent.layout.height,
+          width: ev.nativeEvent.layout.width,
+        });
+      }}
+      style={{ position: 'relative', flex: 1 }}
+    >
+      {viewSize.height != null && viewSize.width != null && (
+        <View
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            height: '100%',
+            width: '100%',
+          }}
+        >
+          <VictoryChart
+            domainPadding={20}
+            domain={{ x: [0, WRAPAROUND_MILLIS] }}
+            height={viewSize.height}
+            width={viewSize.width}
+            padding={{ left: 50 }}
+            theme={merge(VictoryTheme.material, {
+              axis: { style: { tickLabels: { fill: COLOR_3 } } },
+            })}
+          >
+            <VictoryLine
+              style={{ data: { stroke: COLOR_3 } }}
+              data={background ?? []}
+            />
+            <VictoryLine
+              style={{ data: { stroke: COLOR_4 } }}
+              data={foreground ?? []}
+            />
+
+            <VictoryAxis
+              dependentAxis
+              domain={{
+                y: [PRESSURE_AXIS_MIN, PRESSURE_AXIS_MAX],
+              }}
+            />
+          </VictoryChart>
+        </View>
+      )}
+    </View>
+  );
+}
+
+const BUTTONS_CONTAINER_HEIGHT = 95;
+
+function PresControlEdit({
+  defaultValue,
+  onClose,
+  writeValue,
+}: {
+  defaultValue?: number;
+  onClose: () => void;
+  writeValue: (value: number) => Promise<void>;
+}) {
+  const themeContext = React.useContext(ThemeContext);
+  const [value, setValue] = React.useState<number | undefined>(defaultValue);
+
+  return (
+    <View
+      style={{
+        flex: 1,
+        padding: themeContext.padding.md,
+        flexDirection: 'row',
+      }}
+    >
+      <View
+        style={{
+          flex: 1,
+          flexDirection: 'row',
+          backgroundColor: '#394773',
+          borderRadius: 4,
+          padding: themeContext.padding.md,
+        }}
+      >
+        <View
+          style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}
+        >
+          <RNText style={{ color: 'white', fontSize: 80 }}>{value}</RNText>
+        </View>
+
+        <View style={{ width: 80, justifyContent: 'center' }}>
+          <View style={{ height: BUTTONS_CONTAINER_HEIGHT }}>
+            <Button
+              title="+"
+              category="outline-primary"
+              size="xl"
+              onPress={() => {
+                setValue((state) => (state ?? 0) + 1);
+              }}
+            />
+
+            <View style={{ height: themeContext.padding.md }} />
+
+            <Button
+              title="-"
+              category="outline-primary"
+              size="xl"
+              onPress={() => {
+                setValue((state) => (state ?? 0) - 1);
+              }}
+            />
+          </View>
+        </View>
+      </View>
+
+      <View
+        style={{
+          padding: themeContext.padding.md,
+          width: 140,
+          justifyContent: 'center',
+        }}
+      >
+        <View style={{ height: BUTTONS_CONTAINER_HEIGHT }}>
+          <Button
+            title="Aceptar"
+            onPress={() => {
+              value != null && writeValue(value);
+            }}
+          />
+
+          <View style={{ height: themeContext.padding.md }} />
+
+          <Button
+            title="Cancelar"
+            category="outline-primary"
+            onPress={onClose}
+          />
+        </View>
+      </View>
+    </View>
+  );
+}
+
+export function DeviceDetailScreen({ route }) {
+  const { deviceId } = route.params;
+
+  useKeepAwake();
+
+  const bleContext = React.useContext(BLEContext);
+
+  const themeContext = React.useContext(ThemeContext);
+
+  const navigation = useNavigation();
+
+  React.useEffect(() => {
+    ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
+
+    return () => {
+      ScreenOrientation.unlockAsync();
+    };
+  }, []);
+
+  const connectedDevice =
+    bleContext.connectedDeviceIds && bleContext.connectedDeviceIds[deviceId];
+
+  const [changingVariable, setChangingVariable] = React.useState<
+    'pressure' | undefined
+  >();
 
   return (
     <>
@@ -235,133 +409,20 @@ export function DeviceDetailScreen({ route }) {
 
       <View style={{ flexDirection: 'row', flex: 1 }}>
         <View style={{ flex: 1 }}>
-          <View
-            onLayout={(ev) => {
-              setViewSize({
-                height: ev.nativeEvent.layout.height,
-                width: ev.nativeEvent.layout.width,
-              });
-            }}
-            style={{ position: 'relative', flex: 1 }}
-          >
-            {viewSize.height != null && viewSize.width != null && (
-              <View
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  height: '100%',
-                  width: '100%',
-                }}
-              >
-                <VictoryChart
-                  domainPadding={20}
-                  domain={{ x: [0, WRAPAROUND_MILLIS] }}
-                  height={viewSize.height}
-                  width={viewSize.width}
-                  padding={{ left: 50 }}
-                  theme={merge(VictoryTheme.material, {
-                    axis: { style: { tickLabels: { fill: COLOR_3 } } },
-                  })}
-                >
-                  <VictoryLine
-                    style={{ data: { stroke: COLOR_3 } }}
-                    data={background ?? []}
-                  />
-                  <VictoryLine
-                    style={{ data: { stroke: COLOR_4 } }}
-                    data={foreground ?? []}
-                  />
-
-                  <VictoryAxis
-                    dependentAxis
-                    domain={{
-                      y: [PRESSURE_AXIS_MIN, PRESSURE_AXIS_MAX],
-                    }}
-                  />
-                </VictoryChart>
-              </View>
-            )}
-
-            {/* <View
-              style={{
-                position: 'absolute',
-                top: 0,
-                right: 0,
-                zIndex: 9999,
+          {changingVariable == null ? (
+            <Plot deviceId={deviceId} />
+          ) : (
+            <PresControlEdit
+              defaultValue={connectedDevice?.presControl}
+              onClose={() => {
+                setChangingVariable((state) => undefined);
               }}
-            >
-              <Button
-                onPress={async () => {
-                  console.log(
-                    'qowidjqoiwdjqw',
-                    bleContext.connectedDeviceIds![deviceId].deviceHardwareId,
-                    bleContext.connectedDeviceIds![deviceId].characteristic
-                      .serviceUUID,
-                    bleContext.connectedDeviceIds![deviceId].characteristic
-                      .uuid,
-                    encode('a1;')
-                  );
-
-                  console.log(
-                    await bleContext.writeCharacteristicWithoutResponseForDevice!(
-                      bleContext.connectedDeviceIds![deviceId].deviceHardwareId,
-                      bleContext.connectedDeviceIds![deviceId].characteristic
-                        .serviceUUID,
-                      bleContext.connectedDeviceIds![deviceId].characteristic
-                        .uuid,
-                      encode('i30p20;')
-                    )
-                  );
-                }}
-                title="1"
-              />
-
-              <Button
-                onPress={async () => {
-                  console.log(
-                    await bleContext.writeCharacteristicWithoutResponseForDevice!(
-                      bleContext.connectedDeviceIds![deviceId].deviceHardwareId,
-                      bleContext.connectedDeviceIds![deviceId].characteristic
-                        .serviceUUID,
-                      bleContext.connectedDeviceIds![deviceId].characteristic
-                        .uuid,
-                      encode('p40;')
-                    )
-                  );
-                }}
-                title="100"
-              />
-
-              <Button
-                onPress={async () => {
-                  await bleContext.writeCharacteristicWithoutResponseForDevice!(
-                    bleContext.connectedDeviceIds![deviceId].deviceHardwareId,
-                    bleContext.connectedDeviceIds![deviceId].characteristic
-                      .serviceUUID,
-                    bleContext.connectedDeviceIds![deviceId].characteristic
-                      .uuid,
-                    encode('s')
-                  );
-                }}
-                title="s"
-              />
-
-              <TouchableOpacity
-                onPress={() => {
-                  navigation.goBack();
-                }}
-                style={{ padding: 10 }}
-              >
-                <Icon
-                  name="close"
-                  size={20}
-                  backgroundColor="transparent"
-                  color={COLOR_4}
-                />
-              </TouchableOpacity>
-            </View> */}
-          </View>
+              writeValue={async (value) => {
+                await bleContext.writePresControl!({ deviceId, value });
+                setChangingVariable((state) => undefined);
+              }}
+            />
+          )}
 
           <View
             style={{
@@ -372,15 +433,28 @@ export function DeviceDetailScreen({ route }) {
               flexDirection: 'row',
             }}
           >
-            <Button title="P. Control" />
+            <Button
+              title={`P. Control ${connectedDevice?.presControl ?? '-'}`}
+              onPress={() => {
+                setChangingVariable((state) =>
+                  state === 'pressure' ? undefined : 'pressure'
+                );
+              }}
+            />
 
             <View style={{ width: themeContext.sizes.sm }} />
 
-            <Button title="BPM" />
+            <Button title={`BPM ${connectedDevice?.bpm ?? '-'}`} />
 
             <View style={{ width: themeContext.sizes.sm }} />
 
-            <Button title="Rel: I:E" />
+            <Button
+              title={`Rel: I:E 1:${
+                connectedDevice?.ieRatio == null
+                  ? '-'
+                  : connectedDevice?.ieRatio / 10
+              }`}
+            />
           </View>
         </View>
 
