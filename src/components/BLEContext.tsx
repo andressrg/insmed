@@ -317,14 +317,6 @@ export function BLEContextProvider({
 
       const { deviceHardwareId, characteristic } = val;
 
-      console.log(
-        'qwoidjq',
-        deviceHardwareId,
-        characteristic.serviceUUID,
-        characteristic.uuid,
-        encode(`p${value};`)
-      );
-
       await manager!.writeCharacteristicWithoutResponseForDevice!(
         deviceHardwareId,
         characteristic.serviceUUID,
