@@ -30,6 +30,10 @@ export const BLEContext = React.createContext<{
       presControl?: number;
       bpm?: number;
       ieRatio?: number;
+
+      pip?: number;
+      peep?: number;
+      cycleCount?: number;
     };
   };
 
@@ -71,9 +75,14 @@ function CharacteristicConnection({
   deviceHardwareId: string;
   setParams: (p: {
     deviceId;
+
     presControl?: number;
     bpm?: number;
     ieRatio?: number;
+
+    pip?: number;
+    peep?: number;
+    cycleCount?: number;
   }) => void;
   onDisconnect: (p: { deviceId }) => void;
 }) {
@@ -151,7 +160,10 @@ function CharacteristicConnection({
             if (
               parsed.presControl != null ||
               parsed.bpm != null ||
-              parsed.ieRatio != null
+              parsed.ieRatio != null ||
+              parsed.pip != null ||
+              parsed.peep != null ||
+              parsed.cycleCount != null
             ) {
               setParams({
                 deviceId,
@@ -159,6 +171,10 @@ function CharacteristicConnection({
                 presControl: parsed.presControl,
                 bpm: parsed.bpm,
                 ieRatio: parsed.ieRatio,
+
+                pip: parsed.pip,
+                peep: parsed.peep,
+                cycleCount: parsed.cycleCount,
               });
             }
 
@@ -224,6 +240,10 @@ export function BLEContextProvider({
       presControl?: number;
       bpm?: number;
       ieRatio?: number;
+
+      pip?: number;
+      peep?: number;
+      cycleCount?: number;
     }[]
   >([]);
 
@@ -239,6 +259,10 @@ export function BLEContextProvider({
             presControl: d.presControl,
             bpm: d.bpm,
             ieRatio: d.ieRatio,
+
+            pip: d.pip,
+            peep: d.peep,
+            cycleCount: d.cycleCount,
           },
         }),
         {} as {
@@ -249,6 +273,10 @@ export function BLEContextProvider({
             presControl?: number;
             bpm?: number;
             ieRatio?: number;
+
+            pip?: number;
+            peep?: number;
+            cycleCount?: number;
           };
         }
       ),
@@ -284,11 +312,17 @@ export function BLEContextProvider({
       presControl,
       bpm,
       ieRatio,
+      pip,
+      peep,
+      cycleCount,
     }: {
       deviceId;
       presControl?: number;
       bpm?: number;
       ieRatio?: number;
+      pip?: number;
+      peep?: number;
+      cycleCount?: number;
     }) => {
       setCharacteristics((state) =>
         produce(state, (draftState) => {
@@ -298,6 +332,10 @@ export function BLEContextProvider({
             if (presControl != null) item.presControl = presControl;
             if (bpm != null) item.bpm = bpm;
             if (ieRatio != null) item.ieRatio = ieRatio;
+
+            if (pip != null) item.pip = pip;
+            if (peep != null) item.peep = peep;
+            if (cycleCount != null) item.cycleCount = cycleCount;
           }
         })
       );

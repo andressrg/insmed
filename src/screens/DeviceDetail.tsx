@@ -22,7 +22,6 @@ import * as ScreenOrientation from 'expo-screen-orientation';
 import Icon from 'react-native-vector-icons/AntDesign';
 import { useNavigation } from '@react-navigation/native';
 import merge from 'lodash.merge';
-import { encode } from 'base-64';
 import { useKeepAwake } from 'expo-keep-awake';
 
 import { SQLiteContext } from '../components/SQLContext';
@@ -84,7 +83,13 @@ function Button({
   );
 }
 
-function Variable({ title }: { title: string }) {
+function Variable({
+  title,
+  value,
+}: {
+  title: string;
+  value?: React.ReactNode;
+}) {
   const themeContext = React.useContext(ThemeContext);
 
   return (
@@ -102,7 +107,7 @@ function Variable({ title }: { title: string }) {
           borderTopWidth: 1,
         }}
       >
-        XX.X
+        {value ?? '-'}
       </RNText>
     </View>
   );
@@ -397,6 +402,16 @@ export function DeviceDetailScreen({ route }) {
     'pressure' | undefined
   >();
 
+  const inhaleTime =
+    connectedDevice?.bpm == null || connectedDevice?.ieRatio == null
+      ? undefined
+      : 60.0 / (connectedDevice?.bpm * (1 + connectedDevice?.ieRatio));
+
+  const exhaleTime =
+    inhaleTime == null || connectedDevice?.ieRatio == null
+      ? undefined
+      : inhaleTime * connectedDevice?.ieRatio;
+
   return (
     <>
       <StatusBar hidden />
@@ -465,11 +480,11 @@ export function DeviceDetailScreen({ route }) {
             paddingHorizontal: themeContext.sizes.sm,
           }}
         >
-          <Variable title="PIP" />
-          <Variable title="PEEP" />
-          <Variable title="t.IN" />
-          <Variable title="t.EX" />
-          <Variable title="Ciclos" />
+          <Variable title="PIP" value={connectedDevice?.pip} />
+          <Variable title="PEEP" value={connectedDevice?.peep} />
+          <Variable title="t.IN" value={inhaleTime && inhaleTime.toFixed(3)} />
+          <Variable title="t.EX" value={exhaleTime && exhaleTime.toFixed(3)} />
+          <Variable title="Ciclos" value={connectedDevice?.cycleCount} />
         </View>
       </View>
     </>
