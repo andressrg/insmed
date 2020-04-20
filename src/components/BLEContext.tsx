@@ -11,6 +11,9 @@ type writePresControlType = ({
   value: number,
 }) => Promise<void>;
 
+type writeBPMType = writePresControlType;
+type writeIERatioType = writePresControlType;
+
 export const BLEContext = React.createContext<{
   manager?: BleManager;
 
@@ -30,10 +33,16 @@ export const BLEContext = React.createContext<{
       presControl?: number;
       bpm?: number;
       ieRatio?: number;
+
+      pip?: number;
+      peep?: number;
+      cycleCount?: number;
     };
   };
 
   writePresControl?: writePresControlType;
+  writeBPM?: writeBPMType;
+  writeIERatio?: writeIERatioType;
 }>({});
 
 class CharacteristicsErrorBoundary extends React.Component {
@@ -71,9 +80,14 @@ function CharacteristicConnection({
   deviceHardwareId: string;
   setParams: (p: {
     deviceId;
+
     presControl?: number;
     bpm?: number;
     ieRatio?: number;
+
+    pip?: number;
+    peep?: number;
+    cycleCount?: number;
   }) => void;
   onDisconnect: (p: { deviceId }) => void;
 }) {
@@ -151,7 +165,10 @@ function CharacteristicConnection({
             if (
               parsed.presControl != null ||
               parsed.bpm != null ||
-              parsed.ieRatio != null
+              parsed.ieRatio != null ||
+              parsed.pip != null ||
+              parsed.peep != null ||
+              parsed.cycleCount != null
             ) {
               setParams({
                 deviceId,
@@ -159,6 +176,10 @@ function CharacteristicConnection({
                 presControl: parsed.presControl,
                 bpm: parsed.bpm,
                 ieRatio: parsed.ieRatio,
+
+                pip: parsed.pip,
+                peep: parsed.peep,
+                cycleCount: parsed.cycleCount,
               });
             }
 
@@ -224,6 +245,10 @@ export function BLEContextProvider({
       presControl?: number;
       bpm?: number;
       ieRatio?: number;
+
+      pip?: number;
+      peep?: number;
+      cycleCount?: number;
     }[]
   >([]);
 
@@ -239,6 +264,10 @@ export function BLEContextProvider({
             presControl: d.presControl,
             bpm: d.bpm,
             ieRatio: d.ieRatio,
+
+            pip: d.pip,
+            peep: d.peep,
+            cycleCount: d.cycleCount,
           },
         }),
         {} as {
@@ -249,6 +278,10 @@ export function BLEContextProvider({
             presControl?: number;
             bpm?: number;
             ieRatio?: number;
+
+            pip?: number;
+            peep?: number;
+            cycleCount?: number;
           };
         }
       ),
@@ -284,11 +317,17 @@ export function BLEContextProvider({
       presControl,
       bpm,
       ieRatio,
+      pip,
+      peep,
+      cycleCount,
     }: {
       deviceId;
       presControl?: number;
       bpm?: number;
       ieRatio?: number;
+      pip?: number;
+      peep?: number;
+      cycleCount?: number;
     }) => {
       setCharacteristics((state) =>
         produce(state, (draftState) => {
@@ -298,6 +337,10 @@ export function BLEContextProvider({
             if (presControl != null) item.presControl = presControl;
             if (bpm != null) item.bpm = bpm;
             if (ieRatio != null) item.ieRatio = ieRatio;
+
+            if (pip != null) item.pip = pip;
+            if (peep != null) item.peep = peep;
+            if (cycleCount != null) item.cycleCount = cycleCount;
           }
         })
       );
@@ -327,13 +370,52 @@ export function BLEContextProvider({
     [characteristics, manager]
   );
 
+  const writeBPM: writeBPMType = React.useCallback(
+    async ({ deviceId, value }) => {
+      const val = characteristics.find((c) => c.deviceId === deviceId);
+
+      if (val == null) return;
+
+      const { deviceHardwareId, characteristic } = val;
+
+      await manager!.writeCharacteristicWithoutResponseForDevice!(
+        deviceHardwareId,
+        characteristic.serviceUUID,
+        characteristic.uuid,
+        encode(`b${value};`)
+      );
+    },
+    [characteristics, manager]
+  );
+
+  const writeIERatio: writeIERatioType = React.useCallback(
+    async ({ deviceId, value }) => {
+      const val = characteristics.find((c) => c.deviceId === deviceId);
+
+      if (val == null) return;
+
+      const { deviceHardwareId, characteristic } = val;
+
+      await manager!.writeCharacteristicWithoutResponseForDevice!(
+        deviceHardwareId,
+        characteristic.serviceUUID,
+        characteristic.uuid,
+        encode(`i${value};`)
+      );
+    },
+    [characteristics, manager]
+  );
+
   return manager == null ? null : (
     <BLEContext.Provider
       value={{
         manager,
         connectToCharacteristic,
         connectedDeviceIds,
+
         writePresControl,
+        writeBPM,
+        writeIERatio,
       }}
     >
       {children}
