@@ -1,5 +1,7 @@
 import React from 'react';
-import { View, TouchableOpacity, Text, Button } from 'react-native';
+import { View, TouchableOpacity, Text, Text as RNText } from 'react-native';
+
+import { ThemeContext } from '../ThemeContext';
 
 export const PRIMARY_FONT_COLOR = '#293744';
 export const SECONDARY_FONT_COLOR = '#979CA2';
@@ -153,12 +155,7 @@ export function CTAButton({
         borderRadius: 12,
       }}
     >
-      <Button
-        onPress={onPress}
-        title={title}
-        color="white"
-        accessibilityLabel="Learn more about this purple button"
-      />
+      <Button onPress={onPress} title={title} />
     </View>
   );
 }
@@ -192,5 +189,51 @@ export function ShadowContainer({
     >
       {children}
     </View>
+  );
+}
+
+export function Button({
+  title,
+  onPress,
+  category = 'primary',
+  size = 'md',
+}: {
+  title: React.ReactNode;
+  onPress?;
+  category?: 'primary' | 'outline-primary';
+  size?: 'md' | 'lg' | 'xl';
+}) {
+  const themeContext = React.useContext(ThemeContext);
+
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      style={{
+        backgroundColor: {
+          primary: themeContext.button.primary.backgroundColor,
+        }[category],
+        borderColor: {
+          'outline-primary': themeContext.button.primary.backgroundColor,
+        }[category],
+        borderWidth: {
+          'outline-primary': 1,
+        }[category],
+
+        borderRadius: themeContext.button.primary.borderRadius,
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: themeContext.button.primary.height,
+        flex: 1,
+      }}
+    >
+      <RNText
+        style={{
+          color: themeContext.button.primary.color,
+          fontSize: themeContext.button.primary.fontSize[size],
+        }}
+      >
+        {title}
+      </RNText>
+    </TouchableOpacity>
   );
 }
