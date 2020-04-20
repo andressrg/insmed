@@ -1,5 +1,5 @@
 import React from 'react';
-import { RefreshControl } from 'react-native';
+import { RefreshControl, View } from 'react-native';
 import {
   RecyclerListView,
   DataProvider,
@@ -7,7 +7,6 @@ import {
 } from 'recyclerlistview';
 import { useNavigation } from '@react-navigation/native';
 import { Permissions } from 'react-native-unimodules';
-import * as ScreenOrientation from 'expo-screen-orientation';
 
 import { SQLiteContext } from '../components/SQLContext';
 import { BLEContext } from '../components/BLEContext';
@@ -158,7 +157,11 @@ export function DevicesListScreen() {
         }
       />
     ),
-    [navigation]
+    [
+      navigation,
+      themeContext.fontColor.primary,
+      themeContext.fontColor.secondary,
+    ]
   );
 
   const devicesWithConnectionStatus =
@@ -193,14 +196,18 @@ export function DevicesListScreen() {
         backgroundColor={themeContext.color.background2}
       >
         {devices && (
-          <RecyclerListView
-            layoutProvider={layoutProvider}
-            dataProvider={dataProvider}
-            rowRenderer={rowRenderer}
-            refreshControl={refreshControl}
-          />
+          <>
+            <View style={{ height: themeContext.sizes.md }} />
+            <RecyclerListView
+              layoutProvider={layoutProvider}
+              dataProvider={dataProvider}
+              rowRenderer={rowRenderer}
+              refreshControl={refreshControl}
+            />
+          </>
         )}
       </Card>
+
       <ShadowContainer backgroundColor={themeContext.color.background2}>
         <CTAButton
           title="Agregar dispositivos"
