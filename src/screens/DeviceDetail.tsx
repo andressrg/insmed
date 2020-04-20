@@ -1,23 +1,16 @@
 import React from 'react';
 import {
-  RefreshControl,
   View,
   TouchableOpacity,
   Text as RNText,
   StatusBar,
 } from 'react-native';
 import {
-  RecyclerListView,
-  DataProvider,
-  LayoutProvider,
-} from 'recyclerlistview';
-import {
   VictoryChart,
   VictoryLine,
   VictoryTheme,
   VictoryAxis,
 } from 'victory-native';
-import { useAsync } from 'react-async';
 import * as ScreenOrientation from 'expo-screen-orientation';
 import Icon from 'react-native-vector-icons/AntDesign';
 import { useNavigation } from '@react-navigation/native';
@@ -27,9 +20,8 @@ import { useKeepAwake } from 'expo-keep-awake';
 import { SQLiteContext } from '../components/SQLContext';
 import { ThemeContext } from '../components/ThemeContext';
 import { BLEContext } from '../components/BLEContext';
-import { useScreenDimensions } from '../components/useScreenDimensions';
 import { getLines, correctTs, initCorrectTsRef } from '../utils/charts';
-import { ROW_HEIGHT, ListItem, COLOR_4, COLOR_3 } from '../components/UI';
+import { COLOR_4, COLOR_3 } from '../components/UI';
 import { usePromise } from '../components/usePromise';
 
 const WRAPAROUND_MILLIS = 0.5 * 60 * 1000;
@@ -487,57 +479,6 @@ export function DeviceDetailScreen({ route }) {
           <Variable title="Ciclos" value={connectedDevice?.cycleCount} />
         </View>
       </View>
-    </>
-  );
-}
-
-function DataLog({ deviceId }: { deviceId: string }) {
-  const { width: screenWidth } = useScreenDimensions();
-  const dbContext = React.useContext(SQLiteContext);
-
-  // @ts-ignore
-  const { isPending: dataPending, data, reload: reloadData } = useAsync({
-    promiseFn: dbContext.getMeasurements,
-    deviceId,
-  });
-
-  const layoutProvider = React.useMemo(
-    () =>
-      new LayoutProvider(
-        (_) => 0,
-        (_, dim) => {
-          dim.width = screenWidth;
-          dim.height = ROW_HEIGHT;
-        }
-      ),
-    [screenWidth]
-  );
-
-  const rowRenderer = React.useCallback(
-    (_, row: { value: number; timestamp: number }) => (
-      <ListItem title={row.value} subtitle={row.timestamp} />
-    ),
-    []
-  );
-
-  const dataProvider = React.useMemo(
-    () => new DataProvider((r1, r2) => r1 !== r2).cloneWithRows(data || []),
-    [data]
-  );
-
-  const refreshControl = React.useMemo(
-    () => <RefreshControl refreshing={dataPending} onRefresh={reloadData} />,
-    [dataPending, reloadData]
-  );
-
-  return (data || []).length === 0 ? null : (
-    <>
-      <RecyclerListView
-        layoutProvider={layoutProvider}
-        dataProvider={dataProvider}
-        rowRenderer={rowRenderer}
-        refreshControl={refreshControl}
-      />
     </>
   );
 }
