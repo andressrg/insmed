@@ -90,11 +90,15 @@ export function ListItem({
   height = ROW_HEIGHT,
   title,
   subtitle,
+  titleColor,
+  subtitleColor,
   onPress,
 }: {
   height?: number;
   title: React.ReactNode;
   subtitle?: React.ReactNode;
+  titleColor?: string;
+  subtitleColor?: string;
   onPress?: () => void;
 }) {
   return (
@@ -111,9 +115,18 @@ export function ListItem({
       disabled={onPress == null}
     >
       <View>
-        {title && <Text style={{ ...SUBHEADING_TEXT_BOLD }}>{title}</Text>}
+        {title && (
+          <Text style={{ ...SUBHEADING_TEXT_BOLD, color: titleColor }}>
+            {title}
+          </Text>
+        )}
         {subtitle && (
-          <Text style={{ ...BODY_TEXT, color: SECONDARY_FONT_COLOR }}>
+          <Text
+            style={{
+              ...BODY_TEXT,
+              color: subtitleColor ? subtitleColor : SECONDARY_COLOR,
+            }}
+          >
             {subtitle}
           </Text>
         )}
@@ -152,14 +165,16 @@ export function CTAButton({
 
 export function ShadowContainer({
   children,
+  backgroundColor,
   ...props
 }: {
+  backgroundColor: string;
   children: React.ReactNode;
 }) {
   return (
     <View
       style={{
-        backgroundColor: 'white',
+        backgroundColor,
         height: 82,
         justifyContent: 'center',
         borderTopRightRadius: 12,

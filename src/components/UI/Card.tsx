@@ -4,15 +4,19 @@ import { H3 } from './index';
 
 export const Card = ({
   title,
+  titleColor,
   children,
+  backgroundColor,
 }: {
+  backgroundColor: string;
   title: string;
+  titleColor: string;
   children: React.ReactNode;
 }) => (
   <View
     style={{
       flex: 1,
-      backgroundColor: 'white',
+      backgroundColor,
       padding: 18,
       borderTopRightRadius: 12,
       borderTopLeftRadius: 12,
@@ -29,7 +33,7 @@ export const Card = ({
     }}
   >
     <View style={{ flex: 1 }}>
-      <Text style={{ ...H3 }}>{title}</Text>
+      <Text style={{ ...H3, color: titleColor }}>{title}</Text>
     </View>
     <View style={{ flex: 5 }}>{children}</View>
   </View>

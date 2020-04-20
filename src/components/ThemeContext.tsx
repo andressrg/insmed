@@ -19,14 +19,26 @@ type ITheme = {
 
   color: {
     background: string;
+    background2: string;
+    bottomTabBarActive: string;
+    bottomTabBarInactive: string;
   };
+
+  fontColor: { primary: string; secondary: string };
 };
 
 const sizes = { sm: 8, md: 16 };
 
 const fontSize = { md: 14, lg: 16, xl: 32 };
 
-const color = { background: '#151B2E' };
+const fontColor = { primary: '#FFFFFF', secondary: '#394773' };
+
+const color = {
+  background: '#151B2E',
+  background2: '#1E2846',
+  bottomTabBarActive: '#8CC2FE',
+  bottomTabBarInactive: '#BDC2C8',
+};
 
 const DefaultTheme: ITheme = {
   button: {
@@ -46,6 +58,8 @@ const DefaultTheme: ITheme = {
   padding: { md: sizes.md },
 
   color,
+
+  fontColor,
 };
 
 export const ThemeContext = React.createContext<ITheme>(DefaultTheme);

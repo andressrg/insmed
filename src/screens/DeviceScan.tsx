@@ -9,7 +9,7 @@ import { Device } from 'react-native-ble-plx';
 import { useNavigation } from '@react-navigation/native';
 import { Permissions } from 'react-native-unimodules';
 import { useAsync } from 'react-async';
-
+import { ThemeContext } from '../components/ThemeContext';
 import { BLEContext } from '../components/BLEContext';
 import { ListItem } from '../components/UI';
 import { BaseLayout } from '../components/UI/BaseLayout';
@@ -28,6 +28,7 @@ export function multiline(text?: string) {
 }
 
 export function DeviceScanScreen() {
+  const themeContext = React.useContext(ThemeContext);
   const bleContext = React.useContext(BLEContext);
   const manager = bleContext.manager!;
   const connectToCharacteristic = bleContext.connectToCharacteristic!;
@@ -94,7 +95,11 @@ export function DeviceScanScreen() {
 
   return (
     <BaseLayout secondary>
-      <Card title="Dispositivos Cercanos">
+      <Card
+        title="Dispositivos Cercanos"
+        titleColor={themeContext.fontColor.primary}
+        backgroundColor={themeContext.color.background2}
+      >
         {deviceValidationAsync.isPending ? (
           <View
             style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
@@ -112,6 +117,7 @@ export function DeviceScanScreen() {
                 <ListItem
                   key={device.id}
                   title={device.name}
+                  titleColor={themeContext.fontColor.primary}
                   onPress={() => {
                     const controller = new AbortController();
                     setSelectDevicePromise(() =>

@@ -7,6 +7,7 @@ import {
 } from 'recyclerlistview';
 import { useNavigation } from '@react-navigation/native';
 import { Permissions } from 'react-native-unimodules';
+import * as ScreenOrientation from 'expo-screen-orientation';
 
 import { SQLiteContext } from '../components/SQLContext';
 import { BLEContext } from '../components/BLEContext';
@@ -20,6 +21,7 @@ import { BaseLayout } from '../components/UI/BaseLayout';
 import { useScreenDimensions } from '../components/useScreenDimensions';
 import { validateDevice } from '../utils/ble';
 import { Card } from '../components/UI/Card';
+import { ThemeContext } from '../components/ThemeContext';
 
 function useDeviceAutoConnect() {
   const dbContext = React.useContext(SQLiteContext);
@@ -114,6 +116,7 @@ function useDeviceAutoConnect() {
 
 export function DevicesListScreen() {
   const { width: screenWidth } = useScreenDimensions();
+  const themeContext = React.useContext(ThemeContext);
   const dbContext = React.useContext(SQLiteContext);
   const bleContext = React.useContext(BLEContext);
 
@@ -147,6 +150,8 @@ export function DevicesListScreen() {
     (_, { device, isConnected }) => (
       <ListItem
         title={device.name + (isConnected ? ' Connected!' : '')}
+        titleColor={themeContext.fontColor.primary}
+        subtitleColor={themeContext.fontColor.secondary}
         subtitle={device.hardware_id}
         onPress={() =>
           navigation.navigate('DeviceDetail', { deviceId: device.id })
@@ -182,7 +187,11 @@ export function DevicesListScreen() {
 
   return (
     <BaseLayout>
-      <Card title="Dispositivos Conectados">
+      <Card
+        title="Dispositivos Conectados"
+        titleColor={themeContext.fontColor.primary}
+        backgroundColor={themeContext.color.background2}
+      >
         {devices && (
           <RecyclerListView
             layoutProvider={layoutProvider}
@@ -192,7 +201,7 @@ export function DevicesListScreen() {
           />
         )}
       </Card>
-      <ShadowContainer>
+      <ShadowContainer backgroundColor={themeContext.color.background2}>
         <CTAButton
           title="Agregar dispositivos"
           type="primary"
