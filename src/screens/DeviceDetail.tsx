@@ -21,7 +21,7 @@ import { SQLiteContext } from '../components/SQLContext';
 import { ThemeContext } from '../components/ThemeContext';
 import { BLEContext } from '../components/BLEContext';
 import { getLines, correctTs, initCorrectTsRef } from '../utils/charts';
-import { COLOR_4, COLOR_3 } from '../components/UI';
+import { COLOR_4, COLOR_3, Button } from '../components/UI';
 import { usePromise } from '../components/usePromise';
 
 const WRAPAROUND_MILLIS = 0.5 * 60 * 1000;
@@ -30,52 +30,6 @@ const PRESSURE_AXIS_MIN = -10;
 const PRESSURE_AXIS_MAX = 50;
 
 const PLOT_REFRESH_DELAY = 200;
-
-function Button({
-  title,
-  onPress,
-  category = 'primary',
-  size = 'md',
-}: {
-  title: React.ReactNode;
-  onPress?;
-  category?: 'primary' | 'outline-primary';
-  size?: 'md' | 'lg' | 'xl';
-}) {
-  const themeContext = React.useContext(ThemeContext);
-
-  return (
-    <TouchableOpacity
-      onPress={onPress}
-      style={{
-        backgroundColor: {
-          primary: themeContext.button.primary.backgroundColor,
-        }[category],
-        borderColor: {
-          'outline-primary': themeContext.button.primary.backgroundColor,
-        }[category],
-        borderWidth: {
-          'outline-primary': 1,
-        }[category],
-
-        borderRadius: themeContext.button.primary.borderRadius,
-        alignItems: 'center',
-        justifyContent: 'center',
-        height: themeContext.button.primary.height,
-        flex: 1,
-      }}
-    >
-      <RNText
-        style={{
-          color: themeContext.button.primary.color,
-          fontSize: themeContext.button.primary.fontSize[size],
-        }}
-      >
-        {title}
-      </RNText>
-    </TouchableOpacity>
-  );
-}
 
 function Variable({
   title,

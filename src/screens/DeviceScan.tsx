@@ -9,9 +9,11 @@ import { Device } from 'react-native-ble-plx';
 import { useNavigation } from '@react-navigation/native';
 import { Permissions } from 'react-native-unimodules';
 import { useAsync } from 'react-async';
-
+import { ThemeContext } from '../components/ThemeContext';
 import { BLEContext } from '../components/BLEContext';
 import { ListItem } from '../components/UI';
+import { BaseLayout } from '../components/UI/BaseLayout';
+import { Card } from '../components/UI/Card';
 
 import { validateDevice } from '../utils/ble';
 
@@ -26,6 +28,7 @@ export function multiline(text?: string) {
 }
 
 export function DeviceScanScreen() {
+  const themeContext = React.useContext(ThemeContext);
   const bleContext = React.useContext(BLEContext);
   const manager = bleContext.manager!;
   const connectToCharacteristic = bleContext.connectToCharacteristic!;
@@ -91,48 +94,57 @@ export function DeviceScanScreen() {
   }, [manager]);
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
-      {deviceValidationAsync.isPending ? (
-        <View
-          style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
-        >
-          <ActivityIndicator />
-        </View>
-      ) : (
-        <ScrollView>
-          {Object.values(devices)
-            .filter(({ device }) => device.name != null)
-            .sort((a, b) => ('' + a.device.name).localeCompare(b.device.name!))
-            .map(({ device }) => (
-              <ListItem
-                key={device.id}
-                title={device.name}
-                onPress={() => {
-                  const controller = new AbortController();
-                  setSelectDevicePromise(() =>
-                    validateDevice({
-                      manager,
-                      device,
-                      signal: controller.signal,
-                    }).then(async (result) => {
-                      const uartCharacteristic = result?.uartCharacteristic;
-                      const device = result?.device;
+    <BaseLayout secondary>
+      <Card
+        title="Dispositivos Cercanos"
+        titleColor={themeContext.fontColor.primary}
+        backgroundColor={themeContext.color.background2}
+      >
+        {deviceValidationAsync.isPending ? (
+          <View
+            style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
+          >
+            <ActivityIndicator />
+          </View>
+        ) : (
+          <ScrollView>
+            {Object.values(devices)
+              .filter(({ device }) => device.name != null)
+              .sort((a, b) =>
+                ('' + a.device.name).localeCompare(b.device.name!)
+              )
+              .map(({ device }) => (
+                <ListItem
+                  key={device.id}
+                  title={device.name}
+                  titleColor={themeContext.fontColor.primary}
+                  onPress={() => {
+                    const controller = new AbortController();
+                    setSelectDevicePromise(() =>
+                      validateDevice({
+                        manager,
+                        device,
+                        signal: controller.signal,
+                      }).then(async (result) => {
+                        const uartCharacteristic = result?.uartCharacteristic;
+                        const device = result?.device;
 
-                      if (uartCharacteristic != null && device != null) {
-                        await connectToCharacteristic({
-                          characteristic: uartCharacteristic,
-                          device,
-                        });
+                        if (uartCharacteristic != null && device != null) {
+                          await connectToCharacteristic({
+                            characteristic: uartCharacteristic,
+                            device,
+                          });
 
-                        navigation.goBack();
-                      }
-                    })
-                  );
-                }}
-              />
-            ))}
-        </ScrollView>
-      )}
-    </SafeAreaView>
+                          navigation.goBack();
+                        }
+                      })
+                    );
+                  }}
+                />
+              ))}
+          </ScrollView>
+        )}
+      </Card>
+    </BaseLayout>
   );
 }
