@@ -29,6 +29,8 @@ const WRAPAROUND_MILLIS = 0.5 * 60 * 1000;
 const PRESSURE_AXIS_MIN = -10;
 const PRESSURE_AXIS_MAX = 50;
 
+const PLOT_REFRESH_DELAY = 200;
+
 function Button({
   title,
   onPress,
@@ -203,7 +205,7 @@ function Plot({ deviceId }: { deviceId: string }) {
           return result;
         })()
       );
-    }, 1000);
+    }, PLOT_REFRESH_DELAY);
 
     return () => clearInterval(key);
   }, [deviceId, getMeasurements, setPromise]);
