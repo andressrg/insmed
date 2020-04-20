@@ -1,5 +1,5 @@
 import React from 'react';
-import { SafeAreaView, RefreshControl } from 'react-native';
+import { RefreshControl } from 'react-native';
 import {
   RecyclerListView,
   DataProvider,
@@ -10,9 +10,16 @@ import { Permissions } from 'react-native-unimodules';
 
 import { SQLiteContext } from '../components/SQLContext';
 import { BLEContext } from '../components/BLEContext';
-import { ROW_HEIGHT, ListItem } from '../components/UI';
+import {
+  ROW_HEIGHT,
+  ListItem,
+  CTAButton,
+  ShadowContainer,
+} from '../components/UI';
+import { BaseLayout } from '../components/UI/BaseLayout';
 import { useScreenDimensions } from '../components/useScreenDimensions';
 import { validateDevice } from '../utils/ble';
+import { Card } from '../components/UI/Card';
 
 function useDeviceAutoConnect() {
   const dbContext = React.useContext(SQLiteContext);
@@ -174,15 +181,24 @@ export function DevicesListScreen() {
   // useDeviceAutoConnect();
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
-      {devices && (
-        <RecyclerListView
-          layoutProvider={layoutProvider}
-          dataProvider={dataProvider}
-          rowRenderer={rowRenderer}
-          refreshControl={refreshControl}
+    <BaseLayout>
+      <Card title="Dispositivos Conectados">
+        {devices && (
+          <RecyclerListView
+            layoutProvider={layoutProvider}
+            dataProvider={dataProvider}
+            rowRenderer={rowRenderer}
+            refreshControl={refreshControl}
+          />
+        )}
+      </Card>
+      <ShadowContainer>
+        <CTAButton
+          title="Agregar dispositivos"
+          type="primary"
+          onPress={() => navigation.navigate('DeviceScan')}
         />
-      )}
-    </SafeAreaView>
+      </ShadowContainer>
+    </BaseLayout>
   );
 }
