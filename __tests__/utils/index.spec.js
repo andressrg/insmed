@@ -16,6 +16,20 @@ it('works for incomplete data', () => {
   );
 });
 
+it('works for parameters', () => {
+  test(
+    ['t2121p10.3i10e123.3n55;'],
+    [
+      {
+        pressure: [{ t: 2121, p: 10.3 }],
+        pip: 10,
+        peep: 123.3,
+        cycleCount: 55,
+      },
+    ]
+  );
+});
+
 it('Should parse data', () => {
   test(
     ['t2831p10.2;t3131p12.2;t3531p14.2;'],
@@ -29,7 +43,6 @@ it('Should parse data', () => {
       },
     ]
   );
-
   test(
     ['t1831p10.2;', 'sp10;', 'sb12;', 'si13;', 't2831p10.2;t3131'],
     [
@@ -49,7 +62,6 @@ it('Should parse data', () => {
       { pressure: [{ t: 2831, p: 10.2 }] },
     ]
   );
-
   test(
     ['t2831p10.2;t3131', 'p12.2;t3531p14.2', ';'],
     [
@@ -85,7 +97,6 @@ it('Should parse data', () => {
       },
     ]
   );
-
   test(
     ['t283', '0.2;t3131p12.2;t3531p14.2', ';'],
     [
