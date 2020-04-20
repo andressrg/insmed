@@ -11,6 +11,9 @@ type writePresControlType = ({
   value: number,
 }) => Promise<void>;
 
+type writeBPMType = writePresControlType;
+type writeIERatioType = writePresControlType;
+
 export const BLEContext = React.createContext<{
   manager?: BleManager;
 
@@ -38,6 +41,8 @@ export const BLEContext = React.createContext<{
   };
 
   writePresControl?: writePresControlType;
+  writeBPM?: writeBPMType;
+  writeIERatio?: writeIERatioType;
 }>({});
 
 class CharacteristicsErrorBoundary extends React.Component {
@@ -365,13 +370,52 @@ export function BLEContextProvider({
     [characteristics, manager]
   );
 
+  const writeBPM: writeBPMType = React.useCallback(
+    async ({ deviceId, value }) => {
+      const val = characteristics.find((c) => c.deviceId === deviceId);
+
+      if (val == null) return;
+
+      const { deviceHardwareId, characteristic } = val;
+
+      await manager!.writeCharacteristicWithoutResponseForDevice!(
+        deviceHardwareId,
+        characteristic.serviceUUID,
+        characteristic.uuid,
+        encode(`b${value};`)
+      );
+    },
+    [characteristics, manager]
+  );
+
+  const writeIERatio: writeIERatioType = React.useCallback(
+    async ({ deviceId, value }) => {
+      const val = characteristics.find((c) => c.deviceId === deviceId);
+
+      if (val == null) return;
+
+      const { deviceHardwareId, characteristic } = val;
+
+      await manager!.writeCharacteristicWithoutResponseForDevice!(
+        deviceHardwareId,
+        characteristic.serviceUUID,
+        characteristic.uuid,
+        encode(`i${value};`)
+      );
+    },
+    [characteristics, manager]
+  );
+
   return manager == null ? null : (
     <BLEContext.Provider
       value={{
         manager,
         connectToCharacteristic,
         connectedDeviceIds,
+
         writePresControl,
+        writeBPM,
+        writeIERatio,
       }}
     >
       {children}

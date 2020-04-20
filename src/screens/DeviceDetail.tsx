@@ -368,6 +368,184 @@ function PresControlEdit({
   );
 }
 
+function BPMEdit({
+  defaultValue,
+  onClose,
+  writeValue,
+}: {
+  defaultValue?: number;
+  onClose: () => void;
+  writeValue: (value: number) => Promise<void>;
+}) {
+  const themeContext = React.useContext(ThemeContext);
+  const [value, setValue] = React.useState<number | undefined>(defaultValue);
+
+  return (
+    <View
+      style={{
+        flex: 1,
+        padding: themeContext.padding.md,
+        flexDirection: 'row',
+      }}
+    >
+      <View
+        style={{
+          flex: 1,
+          flexDirection: 'row',
+          backgroundColor: '#394773',
+          borderRadius: 4,
+          padding: themeContext.padding.md,
+        }}
+      >
+        <View
+          style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}
+        >
+          <RNText style={{ color: 'white', fontSize: 80 }}>{value}</RNText>
+        </View>
+
+        <View style={{ width: 80, justifyContent: 'center' }}>
+          <View style={{ height: BUTTONS_CONTAINER_HEIGHT }}>
+            <Button
+              title="+"
+              category="outline-primary"
+              size="xl"
+              onPress={() => {
+                setValue((state) => (state ?? 0) + 1);
+              }}
+            />
+
+            <View style={{ height: themeContext.padding.md }} />
+
+            <Button
+              title="-"
+              category="outline-primary"
+              size="xl"
+              onPress={() => {
+                setValue((state) => (state ?? 0) - 1);
+              }}
+            />
+          </View>
+        </View>
+      </View>
+
+      <View
+        style={{
+          padding: themeContext.padding.md,
+          width: 140,
+          justifyContent: 'center',
+        }}
+      >
+        <View style={{ height: BUTTONS_CONTAINER_HEIGHT }}>
+          <Button
+            title="Aceptar"
+            onPress={() => {
+              value != null && writeValue(value);
+            }}
+          />
+
+          <View style={{ height: themeContext.padding.md }} />
+
+          <Button
+            title="Cancelar"
+            category="outline-primary"
+            onPress={onClose}
+          />
+        </View>
+      </View>
+    </View>
+  );
+}
+
+function IERatioEdit({
+  defaultValue,
+  onClose,
+  writeValue,
+}: {
+  defaultValue?: number;
+  onClose: () => void;
+  writeValue: (value: number) => Promise<void>;
+}) {
+  const themeContext = React.useContext(ThemeContext);
+  const [value, setValue] = React.useState<number | undefined>(defaultValue);
+
+  return (
+    <View
+      style={{
+        flex: 1,
+        padding: themeContext.padding.md,
+        flexDirection: 'row',
+      }}
+    >
+      <View
+        style={{
+          flex: 1,
+          flexDirection: 'row',
+          backgroundColor: '#394773',
+          borderRadius: 4,
+          padding: themeContext.padding.md,
+        }}
+      >
+        <View
+          style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}
+        >
+          <RNText style={{ color: 'white', fontSize: 80 }}>
+            {value == null ? '-' : value / 10}
+          </RNText>
+        </View>
+
+        <View style={{ width: 80, justifyContent: 'center' }}>
+          <View style={{ height: BUTTONS_CONTAINER_HEIGHT }}>
+            <Button
+              title="+"
+              category="outline-primary"
+              size="xl"
+              onPress={() => {
+                setValue((state) => (state ?? 0) + 1);
+              }}
+            />
+
+            <View style={{ height: themeContext.padding.md }} />
+
+            <Button
+              title="-"
+              category="outline-primary"
+              size="xl"
+              onPress={() => {
+                setValue((state) => (state ?? 0) - 1);
+              }}
+            />
+          </View>
+        </View>
+      </View>
+
+      <View
+        style={{
+          padding: themeContext.padding.md,
+          width: 140,
+          justifyContent: 'center',
+        }}
+      >
+        <View style={{ height: BUTTONS_CONTAINER_HEIGHT }}>
+          <Button
+            title="Aceptar"
+            onPress={() => {
+              value != null && writeValue(value);
+            }}
+          />
+
+          <View style={{ height: themeContext.padding.md }} />
+
+          <Button
+            title="Cancelar"
+            category="outline-primary"
+            onPress={onClose}
+          />
+        </View>
+      </View>
+    </View>
+  );
+}
+
 export function DeviceDetailScreen({ route }) {
   const { deviceId } = route.params;
 
@@ -391,7 +569,7 @@ export function DeviceDetailScreen({ route }) {
     bleContext.connectedDeviceIds && bleContext.connectedDeviceIds[deviceId];
 
   const [changingVariable, setChangingVariable] = React.useState<
-    'pressure' | undefined
+    'pressure' | 'bpm' | 'ieRatio' | undefined
   >();
 
   const inhaleTime =
@@ -418,7 +596,7 @@ export function DeviceDetailScreen({ route }) {
         <View style={{ flex: 1 }}>
           {changingVariable == null ? (
             <Plot deviceId={deviceId} />
-          ) : (
+          ) : changingVariable === 'pressure' ? (
             <PresControlEdit
               defaultValue={connectedDevice?.presControl}
               onClose={() => {
@@ -429,7 +607,29 @@ export function DeviceDetailScreen({ route }) {
                 setChangingVariable((state) => undefined);
               }}
             />
-          )}
+          ) : changingVariable === 'bpm' ? (
+            <BPMEdit
+              defaultValue={connectedDevice?.bpm}
+              onClose={() => {
+                setChangingVariable((state) => undefined);
+              }}
+              writeValue={async (value) => {
+                await bleContext.writeBPM!({ deviceId, value });
+                setChangingVariable((state) => undefined);
+              }}
+            />
+          ) : changingVariable === 'ieRatio' ? (
+            <IERatioEdit
+              defaultValue={connectedDevice?.ieRatio}
+              onClose={() => {
+                setChangingVariable((state) => undefined);
+              }}
+              writeValue={async (value) => {
+                await bleContext.writeIERatio!({ deviceId, value });
+                setChangingVariable((state) => undefined);
+              }}
+            />
+          ) : null}
 
           <View
             style={{
@@ -451,7 +651,14 @@ export function DeviceDetailScreen({ route }) {
 
             <View style={{ width: themeContext.sizes.sm }} />
 
-            <Button title={`BPM ${connectedDevice?.bpm ?? '-'}`} />
+            <Button
+              title={`BPM ${connectedDevice?.bpm ?? '-'}`}
+              onPress={() => {
+                setChangingVariable((state) =>
+                  state === 'bpm' ? undefined : 'bpm'
+                );
+              }}
+            />
 
             <View style={{ width: themeContext.sizes.sm }} />
 
@@ -461,6 +668,11 @@ export function DeviceDetailScreen({ route }) {
                   ? '-'
                   : connectedDevice?.ieRatio / 10
               }`}
+              onPress={() => {
+                setChangingVariable((state) =>
+                  state === 'ieRatio' ? undefined : 'ieRatio'
+                );
+              }}
             />
           </View>
         </View>
