@@ -46,7 +46,7 @@ function MainTabScreen() {
     >
       <Tab.Screen name="Inicio" component={DevicesListScreen} />
       <Tab.Screen name="Archivo" component={HistoryScreen} />
-      <Tab.Screen name="Acerca de" component={AboutScreen} />
+      <Tab.Screen name="Acerca de lol=" component={AboutScreen} />
       <Tab.Screen name="Opciones" options={{}} component={SettingsScreen} />
     </Tab.Navigator>
   );

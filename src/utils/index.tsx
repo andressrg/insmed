@@ -15,6 +15,7 @@ export const parseData = ({
   cacheRef: { current: string };
 }): {
   pressure?: IData[];
+  flow?: IData[];
 
   presControl?: number;
   bpm?: number;
@@ -22,6 +23,7 @@ export const parseData = ({
 
   pip?: number;
   peep?: number;
+  volume?: number;
   cycleCount?: number;
 } => {
   const dataToParse = cacheRef.current + data;
@@ -42,8 +44,10 @@ export const parseData = ({
   let pip: number | undefined;
   let peep: number | undefined;
   let cycleCount: number | undefined;
+  let volume: number | undefined;
 
-  let dataArray: IData[] = [];
+  let pressureDataArray: IData[] = [];
+  let flowDataArray: IData[] = [];
 
   for (let item of array) {
     if (item.startsWith('sp')) {
@@ -75,11 +79,14 @@ export const parseData = ({
       }
 
       let pressure: number | undefined;
+      let flow: number | undefined;
       let time: number | undefined;
 
       for (const part of parts) {
         if (part.startsWith('p')) {
           pressure = parseFloat(part.replace('p', ''));
+        } else if (part.startsWith('f')) {
+          flow = parseFloat(part.replace('f', ''));
         } else if (part.startsWith('t')) {
           time = parseInt(part.replace('t', ''), 10);
         } else if (part.startsWith('i')) {
@@ -91,6 +98,9 @@ export const parseData = ({
         } else if (part.startsWith('n')) {
           const parsed = parseFloat(part.replace('n', ''));
           if (Number.isNaN(parsed) === false) cycleCount = parsed;
+        } else if (part.startsWith('v')) {
+          const parsed = parseFloat(part.replace('v', ''));
+          if (Number.isNaN(parsed) === false) volume = parsed;
         }
       }
 
@@ -100,7 +110,15 @@ export const parseData = ({
         pressure != null &&
         !Number.isNaN(pressure)
       ) {
-        dataArray.push({ t: time, p: pressure });
+        pressureDataArray.push({ t: time, p: pressure });
+      }
+      if (
+        time != null &&
+        !Number.isNaN(time) &&
+        flow != null &&
+        !Number.isNaN(flow)
+      ) {
+        flowDataArray.push({ t: time, p: flow });
       }
     }
   }
@@ -110,7 +128,8 @@ export const parseData = ({
   }
 
   return {
-    pressure: dataArray,
+    pressure: pressureDataArray,
+    flow: flowDataArray.length > 0 ? flowDataArray : undefined,
 
     presControl,
     ieRatio,
@@ -118,6 +137,7 @@ export const parseData = ({
 
     pip,
     peep,
+    volume,
     cycleCount,
   };
 };
