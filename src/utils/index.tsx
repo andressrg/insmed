@@ -4,7 +4,7 @@ type IData = {
 };
 
 function isDigitOrDot(val: string) {
-  return /^[\d\.]$/.test(val);
+  return /^[\d\.-]$/.test(val);
 }
 
 export const parseData = ({

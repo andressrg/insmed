@@ -101,9 +101,12 @@ function TopSection({ onBack }: { onBack: () => void }) {
 function Plot({
   deviceId,
   variableName,
+  autoScaling = false,
 }: {
   deviceId: string;
   variableName: string;
+
+  autoScaling?: boolean;
 }) {
   const dbContext = React.useContext(SQLiteContext);
 
@@ -230,9 +233,13 @@ function Plot({
 
             <VictoryAxis
               dependentAxis
-              domain={{
-                y: [PRESSURE_AXIS_MIN, PRESSURE_AXIS_MAX],
-              }}
+              domain={
+                autoScaling === true
+                  ? undefined
+                  : {
+                      y: [PRESSURE_AXIS_MIN, PRESSURE_AXIS_MAX],
+                    }
+              }
             />
           </VictoryChart>
         </View>
@@ -566,7 +573,7 @@ export function DeviceDetailScreen({ route }) {
             <>
               <Plot deviceId={deviceId} variableName="pressure" />
 
-              <Plot deviceId={deviceId} variableName="flow" />
+              <Plot deviceId={deviceId} variableName="flow" autoScaling />
             </>
           ) : changingVariable === 'pressure' ? (
             <PresControlEdit
