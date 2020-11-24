@@ -48,8 +48,8 @@ function Variable({
 
       <RNText
         style={{
-          color: '#394773',
-          fontSize: themeContext.fontSize.md,
+          color: 'white',
+          fontSize: 30,
           textAlign: 'right',
           borderTopColor: '#8CC2FE',
           borderTopWidth: 1,
@@ -528,15 +528,20 @@ export function DeviceDetailScreen({ route }) {
     'pressure' | 'bpm' | 'ieRatio' | undefined
   >();
 
-  const inhaleTime =
-    connectedDevice?.bpm == null || connectedDevice?.ieRatio == null
+  const realIERatio =
+    connectedDevice?.ieRatio == null
       ? undefined
-      : 60.0 / (connectedDevice?.bpm * (1 + connectedDevice?.ieRatio));
+      : connectedDevice?.ieRatio / 10;
+
+  const inhaleTime =
+    connectedDevice?.bpm == null || realIERatio == null
+      ? undefined
+      : 60.0 / (connectedDevice?.bpm * (1 + realIERatio));
 
   const exhaleTime =
-    inhaleTime == null || connectedDevice?.ieRatio == null
+    inhaleTime == null || realIERatio == null
       ? undefined
-      : inhaleTime * connectedDevice?.ieRatio;
+      : inhaleTime * realIERatio;
 
   return (
     <>
