@@ -98,7 +98,13 @@ function TopSection({ onBack }: { onBack: () => void }) {
   );
 }
 
-function Plot({ deviceId }: { deviceId: string }) {
+function Plot({
+  deviceId,
+  variableName,
+}: {
+  deviceId: string;
+  variableName: string;
+}) {
   const dbContext = React.useContext(SQLiteContext);
 
   const getMeasurements = dbContext.getMeasurements!;
@@ -131,6 +137,7 @@ function Plot({ deviceId }: { deviceId: string }) {
               deviceId,
               cursor: cursorRef.current,
               first: 2000,
+              variableName,
             })
           )
             .reverse()
@@ -162,7 +169,7 @@ function Plot({ deviceId }: { deviceId: string }) {
     }, PLOT_REFRESH_DELAY);
 
     return () => clearInterval(key);
-  }, [deviceId, getMeasurements, setPromise]);
+  }, [deviceId, getMeasurements, setPromise, variableName]);
 
   const [viewSize, setViewSize] = React.useState<{
     height?: number;
@@ -556,7 +563,11 @@ export function DeviceDetailScreen({ route }) {
       <View style={{ flexDirection: 'row', flex: 1 }}>
         <View style={{ flex: 1 }}>
           {changingVariable == null ? (
-            <Plot deviceId={deviceId} />
+            <>
+              <Plot deviceId={deviceId} variableName="pressure" />
+
+              <Plot deviceId={deviceId} variableName="flow" />
+            </>
           ) : changingVariable === 'pressure' ? (
             <PresControlEdit
               defaultValue={connectedDevice?.presControl}
