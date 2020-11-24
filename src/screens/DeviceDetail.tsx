@@ -613,7 +613,7 @@ export function DeviceDetailScreen({ route }) {
             <View style={{ width: themeContext.sizes.sm }} />
 
             <Button
-              title={`BPM ${connectedDevice?.bpm ?? '-'}`}
+              title={`FR ${connectedDevice?.bpm ?? '-'}`}
               onPress={() => {
                 setChangingVariable((state) =>
                   state === 'bpm' ? undefined : 'bpm'
@@ -647,8 +647,8 @@ export function DeviceDetailScreen({ route }) {
         >
           <Variable title="PIP" value={connectedDevice?.pip} />
           <Variable title="PEEP" value={connectedDevice?.peep} />
-          <Variable title="t.IN" value={inhaleTime && inhaleTime.toFixed(3)} />
-          <Variable title="t.EX" value={exhaleTime && exhaleTime.toFixed(3)} />
+          {/* <Variable title="t.IN" value={inhaleTime && inhaleTime.toFixed(3)} />
+          <Variable title="t.EX" value={exhaleTime && exhaleTime.toFixed(3)} /> */}
           <Variable title="Ciclos" value={connectedDevice?.cycleCount} />
         </View>
       </View>

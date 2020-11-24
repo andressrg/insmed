@@ -36,6 +36,7 @@ export const BLEContext = React.createContext<{
 
       pip?: number;
       peep?: number;
+      volume?: number;
       cycleCount?: number;
     };
   };
@@ -87,6 +88,7 @@ function CharacteristicConnection({
 
     pip?: number;
     peep?: number;
+    volume?: number;
     cycleCount?: number;
   }) => void;
   onDisconnect: (p: { deviceId }) => void;
@@ -160,14 +162,13 @@ function CharacteristicConnection({
               cacheRef,
             });
 
-            const pressure = parsed.pressure;
-
             if (
               parsed.presControl != null ||
               parsed.bpm != null ||
               parsed.ieRatio != null ||
               parsed.pip != null ||
               parsed.peep != null ||
+              parsed.volume != null ||
               parsed.cycleCount != null
             ) {
               setParams({
@@ -179,9 +180,12 @@ function CharacteristicConnection({
 
                 pip: parsed.pip,
                 peep: parsed.peep,
+                volume: parsed.volume,
                 cycleCount: parsed.cycleCount,
               });
             }
+
+            const pressure = parsed.pressure;
 
             pressure &&
               pressure.length > 0 &&
@@ -191,6 +195,21 @@ function CharacteristicConnection({
                   timestamp: Date.now(),
                   external_timestamp: d.t,
                   type: 'pressure',
+                  value: d.p,
+                  raw: '',
+                }))
+              );
+
+            const flow = parsed.flow;
+
+            flow &&
+              flow.length > 0 &&
+              insertMeasurements(
+                flow.map((d) => ({
+                  device_id: deviceId,
+                  timestamp: Date.now(),
+                  external_timestamp: d.t,
+                  type: 'flow',
                   value: d.p,
                   raw: '',
                 }))
@@ -248,6 +267,7 @@ export function BLEContextProvider({
 
       pip?: number;
       peep?: number;
+      volume?: number;
       cycleCount?: number;
     }[]
   >([]);
@@ -267,6 +287,7 @@ export function BLEContextProvider({
 
             pip: d.pip,
             peep: d.peep,
+            volume: d.volume,
             cycleCount: d.cycleCount,
           },
         }),
@@ -281,6 +302,7 @@ export function BLEContextProvider({
 
             pip?: number;
             peep?: number;
+            volume?: number;
             cycleCount?: number;
           };
         }
@@ -319,6 +341,7 @@ export function BLEContextProvider({
       ieRatio,
       pip,
       peep,
+      volume,
       cycleCount,
     }: {
       deviceId;
@@ -327,6 +350,7 @@ export function BLEContextProvider({
       ieRatio?: number;
       pip?: number;
       peep?: number;
+      volume?: number;
       cycleCount?: number;
     }) => {
       setCharacteristics((state) =>
@@ -340,6 +364,7 @@ export function BLEContextProvider({
 
             if (pip != null) item.pip = pip;
             if (peep != null) item.peep = peep;
+            if (volume != null) item.volume = volume;
             if (cycleCount != null) item.cycleCount = cycleCount;
           }
         })
