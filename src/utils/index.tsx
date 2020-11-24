@@ -24,6 +24,7 @@ export const parseData = ({
   pip?: number;
   peep?: number;
   volume?: number;
+  mode?: number;
   cycleCount?: number;
 } => {
   const dataToParse = cacheRef.current + data;
@@ -45,6 +46,7 @@ export const parseData = ({
   let peep: number | undefined;
   let cycleCount: number | undefined;
   let volume: number | undefined;
+  let mode: number | undefined;
 
   let pressureDataArray: IData[] = [];
   let flowDataArray: IData[] = [];
@@ -101,6 +103,9 @@ export const parseData = ({
         } else if (part.startsWith('v')) {
           const parsed = parseFloat(part.replace('v', ''));
           if (Number.isNaN(parsed) === false) volume = parsed;
+        } else if (part.startsWith('m')) {
+          const parsed = parseFloat(part.replace('m', ''));
+          if (Number.isNaN(parsed) === false) mode = parsed;
         }
       }
 
@@ -138,6 +143,7 @@ export const parseData = ({
     pip,
     peep,
     volume,
+    mode,
     cycleCount,
   };
 };
