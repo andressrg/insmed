@@ -18,7 +18,7 @@ it('works for incomplete data', () => {
 
 it('works for parameters', () => {
   test(
-    ['t2121p10.3f-3.2i10e123.3n55v350;'],
+    ['t2121p10.3f-3.2i10e123.3n55v350m0;'],
     [
       {
         pressure: [{ t: 2121, p: 10.3 }],
@@ -27,6 +27,7 @@ it('works for parameters', () => {
         peep: 123.3,
         cycleCount: 55,
         volume: 350,
+        mode: 0,
       },
     ]
   );

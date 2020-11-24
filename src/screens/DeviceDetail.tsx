@@ -252,6 +252,96 @@ function Plot({
 
 const BUTTONS_CONTAINER_HEIGHT = 95;
 
+function ModeEdit({
+  defaultValue,
+  onClose,
+  writeValue,
+}: {
+  defaultValue?: number;
+  onClose: () => void;
+  writeValue: (value: number) => Promise<void>;
+}) {
+  const themeContext = React.useContext(ThemeContext);
+  const [value, setValue] = React.useState<number | undefined>(defaultValue);
+
+  return (
+    <View
+      style={{
+        flex: 1,
+        padding: themeContext.padding.md,
+        flexDirection: 'row',
+      }}
+    >
+      <View
+        style={{
+          flex: 1,
+          flexDirection: 'row',
+          backgroundColor: '#394773',
+          borderRadius: 4,
+          padding: themeContext.padding.md,
+        }}
+      >
+        <View
+          style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}
+        >
+          <RNText style={{ color: 'white', fontSize: 80 }}>
+            {value === 0 ? 'ACV' : value === 1 ? 'PCV' : '-'}
+          </RNText>
+        </View>
+
+        <View style={{ width: 80, justifyContent: 'center' }}>
+          <View style={{ height: BUTTONS_CONTAINER_HEIGHT }}>
+            <Button
+              title="+"
+              category="outline-primary"
+              size="xl"
+              onPress={() => {
+                setValue((state) => Math.abs((state ?? 0) + 1) % 2);
+              }}
+            />
+
+            <View style={{ height: themeContext.padding.md }} />
+
+            <Button
+              title="-"
+              category="outline-primary"
+              size="xl"
+              onPress={() => {
+                setValue((state) => Math.abs((state ?? 0) - 1) % 2);
+              }}
+            />
+          </View>
+        </View>
+      </View>
+
+      <View
+        style={{
+          padding: themeContext.padding.md,
+          width: 140,
+          justifyContent: 'center',
+        }}
+      >
+        <View style={{ height: BUTTONS_CONTAINER_HEIGHT }}>
+          <Button
+            title="Aceptar"
+            onPress={() => {
+              value != null && writeValue(value);
+            }}
+          />
+
+          <View style={{ height: themeContext.padding.md }} />
+
+          <Button
+            title="Cancelar"
+            category="outline-primary"
+            onPress={onClose}
+          />
+        </View>
+      </View>
+    </View>
+  );
+}
+
 function PresControlEdit({
   defaultValue,
   onClose,
@@ -541,7 +631,7 @@ export function DeviceDetailScreen({ route }) {
     bleContext.connectedDeviceIds && bleContext.connectedDeviceIds[deviceId];
 
   const [changingVariable, setChangingVariable] = React.useState<
-    'pressure' | 'bpm' | 'ieRatio' | undefined
+    'pressure' | 'bpm' | 'ieRatio' | 'mode' | undefined
   >();
 
   const vm =
@@ -583,6 +673,17 @@ export function DeviceDetailScreen({ route }) {
                 setChangingVariable((state) => undefined);
               }}
             />
+          ) : changingVariable === 'mode' ? (
+            <ModeEdit
+              defaultValue={connectedDevice?.mode}
+              onClose={() => {
+                setChangingVariable((state) => undefined);
+              }}
+              writeValue={async (value) => {
+                await bleContext.writeMode!({ deviceId, value });
+                setChangingVariable((state) => undefined);
+              }}
+            />
           ) : changingVariable === 'bpm' ? (
             <BPMEdit
               defaultValue={connectedDevice?.bpm}
@@ -616,6 +717,23 @@ export function DeviceDetailScreen({ route }) {
               flexDirection: 'row',
             }}
           >
+            <Button
+              title={`Modo ${
+                connectedDevice?.presControl === 0
+                  ? 'ACV'
+                  : connectedDevice?.presControl === 1
+                  ? 'PCV'
+                  : '-'
+              }`}
+              onPress={() => {
+                setChangingVariable((state) =>
+                  state === 'mode' ? undefined : 'mode'
+                );
+              }}
+            />
+
+            <View style={{ width: themeContext.sizes.sm }} />
+
             <Button
               title={`P. Control ${connectedDevice?.presControl ?? '-'}`}
               onPress={() => {
