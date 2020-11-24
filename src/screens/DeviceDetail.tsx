@@ -102,9 +102,11 @@ function Plot({
   deviceId,
   variableName,
   autoScaling = false,
+  lineColor = COLOR_4,
 }: {
   deviceId: string;
   variableName: string;
+  lineColor?: string;
 
   autoScaling?: boolean;
 }) {
@@ -227,7 +229,7 @@ function Plot({
               data={background ?? []}
             />
             <VictoryLine
-              style={{ data: { stroke: COLOR_4 } }}
+              style={{ data: { stroke: lineColor } }}
               data={foreground ?? []}
             />
 
@@ -542,20 +544,10 @@ export function DeviceDetailScreen({ route }) {
     'pressure' | 'bpm' | 'ieRatio' | undefined
   >();
 
-  const realIERatio =
-    connectedDevice?.ieRatio == null
+  const vm =
+    connectedDevice?.volume == null || connectedDevice?.bpm == null
       ? undefined
-      : connectedDevice?.ieRatio / 10;
-
-  const inhaleTime =
-    connectedDevice?.bpm == null || realIERatio == null
-      ? undefined
-      : 60.0 / (connectedDevice?.bpm * (1 + realIERatio));
-
-  const exhaleTime =
-    inhaleTime == null || realIERatio == null
-      ? undefined
-      : inhaleTime * realIERatio;
+      : (connectedDevice?.volume * connectedDevice?.bpm) / 1000;
 
   return (
     <>
@@ -571,9 +563,14 @@ export function DeviceDetailScreen({ route }) {
         <View style={{ flex: 1 }}>
           {changingVariable == null ? (
             <>
-              <Plot deviceId={deviceId} variableName="pressure" />
+              <Plot deviceId={deviceId} variableName="pressure" autoScaling />
 
-              <Plot deviceId={deviceId} variableName="flow" autoScaling />
+              <Plot
+                deviceId={deviceId}
+                variableName="flow"
+                autoScaling
+                lineColor="#54CFF6"
+              />
             </>
           ) : changingVariable === 'pressure' ? (
             <PresControlEdit
@@ -665,8 +662,8 @@ export function DeviceDetailScreen({ route }) {
         >
           <Variable title="PIP" value={connectedDevice?.pip} />
           <Variable title="PEEP" value={connectedDevice?.peep} />
-          {/* <Variable title="t.IN" value={inhaleTime && inhaleTime.toFixed(3)} />
-          <Variable title="t.EX" value={exhaleTime && exhaleTime.toFixed(3)} /> */}
+          <Variable title="Vti (ml)" value={connectedDevice?.volume} />
+          <Variable title="VM (L/min)" value={vm?.toFixed(3)} />
           <Variable title="Ciclos" value={connectedDevice?.cycleCount} />
         </View>
       </View>
