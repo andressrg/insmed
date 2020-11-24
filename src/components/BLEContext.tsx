@@ -13,6 +13,7 @@ type writePresControlType = ({
 
 type writeBPMType = writePresControlType;
 type writeIERatioType = writePresControlType;
+type writeModeType = writePresControlType;
 
 export const BLEContext = React.createContext<{
   manager?: BleManager;
@@ -36,13 +37,16 @@ export const BLEContext = React.createContext<{
 
       pip?: number;
       peep?: number;
+      volume?: number;
       cycleCount?: number;
+      mode: number | undefined;
     };
   };
 
   writePresControl?: writePresControlType;
   writeBPM?: writeBPMType;
   writeIERatio?: writeIERatioType;
+  writeMode?: writeModeType;
 }>({});
 
 class CharacteristicsErrorBoundary extends React.Component {
@@ -87,7 +91,9 @@ function CharacteristicConnection({
 
     pip?: number;
     peep?: number;
+    volume?: number;
     cycleCount?: number;
+    mode: number | undefined;
   }) => void;
   onDisconnect: (p: { deviceId }) => void;
 }) {
@@ -160,14 +166,14 @@ function CharacteristicConnection({
               cacheRef,
             });
 
-            const pressure = parsed.pressure;
-
             if (
               parsed.presControl != null ||
               parsed.bpm != null ||
               parsed.ieRatio != null ||
               parsed.pip != null ||
               parsed.peep != null ||
+              parsed.volume != null ||
+              parsed.mode != null ||
               parsed.cycleCount != null
             ) {
               setParams({
@@ -179,9 +185,13 @@ function CharacteristicConnection({
 
                 pip: parsed.pip,
                 peep: parsed.peep,
+                volume: parsed.volume,
                 cycleCount: parsed.cycleCount,
+                mode: parsed.mode,
               });
             }
+
+            const pressure = parsed.pressure;
 
             pressure &&
               pressure.length > 0 &&
@@ -191,6 +201,21 @@ function CharacteristicConnection({
                   timestamp: Date.now(),
                   external_timestamp: d.t,
                   type: 'pressure',
+                  value: d.p,
+                  raw: '',
+                }))
+              );
+
+            const flow = parsed.flow;
+
+            flow &&
+              flow.length > 0 &&
+              insertMeasurements(
+                flow.map((d) => ({
+                  device_id: deviceId,
+                  timestamp: Date.now(),
+                  external_timestamp: d.t,
+                  type: 'flow',
                   value: d.p,
                   raw: '',
                 }))
@@ -248,7 +273,9 @@ export function BLEContextProvider({
 
       pip?: number;
       peep?: number;
+      volume?: number;
       cycleCount?: number;
+      mode: number | undefined;
     }[]
   >([]);
 
@@ -267,7 +294,9 @@ export function BLEContextProvider({
 
             pip: d.pip,
             peep: d.peep,
+            volume: d.volume,
             cycleCount: d.cycleCount,
+            mode: d.mode,
           },
         }),
         {} as {
@@ -281,7 +310,9 @@ export function BLEContextProvider({
 
             pip?: number;
             peep?: number;
+            volume?: number;
             cycleCount?: number;
+            mode: number | undefined;
           };
         }
       ),
@@ -304,6 +335,7 @@ export function BLEContextProvider({
                 characteristic,
                 deviceId: id,
                 deviceHardwareId: device.id,
+                mode: undefined,
               },
             ]
       );
@@ -319,7 +351,9 @@ export function BLEContextProvider({
       ieRatio,
       pip,
       peep,
+      volume,
       cycleCount,
+      mode,
     }: {
       deviceId;
       presControl?: number;
@@ -327,7 +361,9 @@ export function BLEContextProvider({
       ieRatio?: number;
       pip?: number;
       peep?: number;
+      volume?: number;
       cycleCount?: number;
+      mode?: number;
     }) => {
       setCharacteristics((state) =>
         produce(state, (draftState) => {
@@ -340,7 +376,9 @@ export function BLEContextProvider({
 
             if (pip != null) item.pip = pip;
             if (peep != null) item.peep = peep;
+            if (volume != null) item.volume = volume;
             if (cycleCount != null) item.cycleCount = cycleCount;
+            if (mode != null) item.mode = mode;
           }
         })
       );
@@ -406,6 +444,24 @@ export function BLEContextProvider({
     [characteristics, manager]
   );
 
+  const writeMode: writeModeType = React.useCallback(
+    async ({ deviceId, value }) => {
+      const val = characteristics.find((c) => c.deviceId === deviceId);
+
+      if (val == null) return;
+
+      const { deviceHardwareId, characteristic } = val;
+
+      await manager!.writeCharacteristicWithoutResponseForDevice!(
+        deviceHardwareId,
+        characteristic.serviceUUID,
+        characteristic.uuid,
+        encode(`m${value};`)
+      );
+    },
+    [characteristics, manager]
+  );
+
   return manager == null ? null : (
     <BLEContext.Provider
       value={{
@@ -416,6 +472,7 @@ export function BLEContextProvider({
         writePresControl,
         writeBPM,
         writeIERatio,
+        writeMode,
       }}
     >
       {children}

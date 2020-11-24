@@ -98,7 +98,18 @@ function TopSection({ onBack }: { onBack: () => void }) {
   );
 }
 
-function Plot({ deviceId }: { deviceId: string }) {
+function Plot({
+  deviceId,
+  variableName,
+  autoScaling = false,
+  lineColor = COLOR_4,
+}: {
+  deviceId: string;
+  variableName: string;
+  lineColor?: string;
+
+  autoScaling?: boolean;
+}) {
   const dbContext = React.useContext(SQLiteContext);
 
   const getMeasurements = dbContext.getMeasurements!;
@@ -131,6 +142,7 @@ function Plot({ deviceId }: { deviceId: string }) {
               deviceId,
               cursor: cursorRef.current,
               first: 2000,
+              variableName,
             })
           )
             .reverse()
@@ -162,7 +174,7 @@ function Plot({ deviceId }: { deviceId: string }) {
     }, PLOT_REFRESH_DELAY);
 
     return () => clearInterval(key);
-  }, [deviceId, getMeasurements, setPromise]);
+  }, [deviceId, getMeasurements, setPromise, variableName]);
 
   const [viewSize, setViewSize] = React.useState<{
     height?: number;
@@ -217,15 +229,19 @@ function Plot({ deviceId }: { deviceId: string }) {
               data={background ?? []}
             />
             <VictoryLine
-              style={{ data: { stroke: COLOR_4 } }}
+              style={{ data: { stroke: lineColor } }}
               data={foreground ?? []}
             />
 
             <VictoryAxis
               dependentAxis
-              domain={{
-                y: [PRESSURE_AXIS_MIN, PRESSURE_AXIS_MAX],
-              }}
+              domain={
+                autoScaling === true
+                  ? undefined
+                  : {
+                      y: [PRESSURE_AXIS_MIN, PRESSURE_AXIS_MAX],
+                    }
+              }
             />
           </VictoryChart>
         </View>
@@ -235,6 +251,96 @@ function Plot({ deviceId }: { deviceId: string }) {
 }
 
 const BUTTONS_CONTAINER_HEIGHT = 95;
+
+function ModeEdit({
+  defaultValue,
+  onClose,
+  writeValue,
+}: {
+  defaultValue?: number;
+  onClose: () => void;
+  writeValue: (value: number) => Promise<void>;
+}) {
+  const themeContext = React.useContext(ThemeContext);
+  const [value, setValue] = React.useState<number | undefined>(defaultValue);
+
+  return (
+    <View
+      style={{
+        flex: 1,
+        padding: themeContext.padding.md,
+        flexDirection: 'row',
+      }}
+    >
+      <View
+        style={{
+          flex: 1,
+          flexDirection: 'row',
+          backgroundColor: '#394773',
+          borderRadius: 4,
+          padding: themeContext.padding.md,
+        }}
+      >
+        <View
+          style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}
+        >
+          <RNText style={{ color: 'white', fontSize: 80 }}>
+            {value === 0 ? 'ACV' : value === 1 ? 'PCV' : '-'}
+          </RNText>
+        </View>
+
+        <View style={{ width: 80, justifyContent: 'center' }}>
+          <View style={{ height: BUTTONS_CONTAINER_HEIGHT }}>
+            <Button
+              title="+"
+              category="outline-primary"
+              size="xl"
+              onPress={() => {
+                setValue((state) => Math.abs((state ?? 0) + 1) % 2);
+              }}
+            />
+
+            <View style={{ height: themeContext.padding.md }} />
+
+            <Button
+              title="-"
+              category="outline-primary"
+              size="xl"
+              onPress={() => {
+                setValue((state) => Math.abs((state ?? 0) - 1) % 2);
+              }}
+            />
+          </View>
+        </View>
+      </View>
+
+      <View
+        style={{
+          padding: themeContext.padding.md,
+          width: 140,
+          justifyContent: 'center',
+        }}
+      >
+        <View style={{ height: BUTTONS_CONTAINER_HEIGHT }}>
+          <Button
+            title="Aceptar"
+            onPress={() => {
+              value != null && writeValue(value);
+            }}
+          />
+
+          <View style={{ height: themeContext.padding.md }} />
+
+          <Button
+            title="Cancelar"
+            category="outline-primary"
+            onPress={onClose}
+          />
+        </View>
+      </View>
+    </View>
+  );
+}
 
 function PresControlEdit({
   defaultValue,
@@ -525,23 +631,13 @@ export function DeviceDetailScreen({ route }) {
     bleContext.connectedDeviceIds && bleContext.connectedDeviceIds[deviceId];
 
   const [changingVariable, setChangingVariable] = React.useState<
-    'pressure' | 'bpm' | 'ieRatio' | undefined
+    'pressure' | 'bpm' | 'ieRatio' | 'mode' | undefined
   >();
 
-  const realIERatio =
-    connectedDevice?.ieRatio == null
+  const vm =
+    connectedDevice?.volume == null || connectedDevice?.bpm == null
       ? undefined
-      : connectedDevice?.ieRatio / 10;
-
-  const inhaleTime =
-    connectedDevice?.bpm == null || realIERatio == null
-      ? undefined
-      : 60.0 / (connectedDevice?.bpm * (1 + realIERatio));
-
-  const exhaleTime =
-    inhaleTime == null || realIERatio == null
-      ? undefined
-      : inhaleTime * realIERatio;
+      : (connectedDevice?.volume * connectedDevice?.bpm) / 1000;
 
   return (
     <>
@@ -556,7 +652,16 @@ export function DeviceDetailScreen({ route }) {
       <View style={{ flexDirection: 'row', flex: 1 }}>
         <View style={{ flex: 1 }}>
           {changingVariable == null ? (
-            <Plot deviceId={deviceId} />
+            <>
+              <Plot deviceId={deviceId} variableName="pressure" autoScaling />
+
+              <Plot
+                deviceId={deviceId}
+                variableName="flow"
+                autoScaling
+                lineColor="#54CFF6"
+              />
+            </>
           ) : changingVariable === 'pressure' ? (
             <PresControlEdit
               defaultValue={connectedDevice?.presControl}
@@ -565,6 +670,17 @@ export function DeviceDetailScreen({ route }) {
               }}
               writeValue={async (value) => {
                 await bleContext.writePresControl!({ deviceId, value });
+                setChangingVariable((state) => undefined);
+              }}
+            />
+          ) : changingVariable === 'mode' ? (
+            <ModeEdit
+              defaultValue={connectedDevice?.mode}
+              onClose={() => {
+                setChangingVariable((state) => undefined);
+              }}
+              writeValue={async (value) => {
+                await bleContext.writeMode!({ deviceId, value });
                 setChangingVariable((state) => undefined);
               }}
             />
@@ -602,6 +718,23 @@ export function DeviceDetailScreen({ route }) {
             }}
           >
             <Button
+              title={`Modo ${
+                connectedDevice?.presControl === 0
+                  ? 'ACV'
+                  : connectedDevice?.presControl === 1
+                  ? 'PCV'
+                  : '-'
+              }`}
+              onPress={() => {
+                setChangingVariable((state) =>
+                  state === 'mode' ? undefined : 'mode'
+                );
+              }}
+            />
+
+            <View style={{ width: themeContext.sizes.sm }} />
+
+            <Button
               title={`P. Control ${connectedDevice?.presControl ?? '-'}`}
               onPress={() => {
                 setChangingVariable((state) =>
@@ -613,7 +746,7 @@ export function DeviceDetailScreen({ route }) {
             <View style={{ width: themeContext.sizes.sm }} />
 
             <Button
-              title={`BPM ${connectedDevice?.bpm ?? '-'}`}
+              title={`FR ${connectedDevice?.bpm ?? '-'}`}
               onPress={() => {
                 setChangingVariable((state) =>
                   state === 'bpm' ? undefined : 'bpm'
@@ -647,8 +780,8 @@ export function DeviceDetailScreen({ route }) {
         >
           <Variable title="PIP" value={connectedDevice?.pip} />
           <Variable title="PEEP" value={connectedDevice?.peep} />
-          <Variable title="t.IN" value={inhaleTime && inhaleTime.toFixed(3)} />
-          <Variable title="t.EX" value={exhaleTime && exhaleTime.toFixed(3)} />
+          <Variable title="Vti (ml)" value={connectedDevice?.volume} />
+          <Variable title="VM (L/min)" value={vm?.toFixed(3)} />
           <Variable title="Ciclos" value={connectedDevice?.cycleCount} />
         </View>
       </View>
