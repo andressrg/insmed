@@ -29,7 +29,8 @@ const WRAPAROUND_MILLIS = 0.5 * 60 * 1000;
 const PRESSURE_AXIS_MIN = -10;
 const PRESSURE_AXIS_MAX = 50;
 
-const PLOT_REFRESH_DELAY = 200;
+// const PLOT_REFRESH_DELAY = 200;
+const PLOT_REFRESH_DELAY = 2000;
 
 function Variable({
   title,
@@ -285,7 +286,7 @@ function ModeEdit({
           style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}
         >
           <RNText style={{ color: 'white', fontSize: 80 }}>
-            {value === 0 ? 'ACV' : value === 1 ? 'PCV' : '-'}
+            {value === 0 ? 'PCV' : value === 1 ? 'ACV' : '-'}
           </RNText>
         </View>
 
@@ -608,6 +609,96 @@ function IERatioEdit({
   );
 }
 
+function SensEdit({
+  defaultValue,
+  onClose,
+  writeValue,
+}: {
+  defaultValue?: number;
+  onClose: () => void;
+  writeValue: (value: number) => Promise<void>;
+}) {
+  const themeContext = React.useContext(ThemeContext);
+  const [value, setValue] = React.useState<number | undefined>(defaultValue);
+
+  return (
+    <View
+      style={{
+        flex: 1,
+        padding: themeContext.padding.md,
+        flexDirection: 'row',
+      }}
+    >
+      <View
+        style={{
+          flex: 1,
+          flexDirection: 'row',
+          backgroundColor: '#394773',
+          borderRadius: 4,
+          padding: themeContext.padding.md,
+        }}
+      >
+        <View
+          style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}
+        >
+          <RNText style={{ color: 'white', fontSize: 80 }}>
+            {value == null ? '-' : value / 10}
+          </RNText>
+        </View>
+
+        <View style={{ width: 80, justifyContent: 'center' }}>
+          <View style={{ height: BUTTONS_CONTAINER_HEIGHT }}>
+            <Button
+              title="+"
+              category="outline-primary"
+              size="xl"
+              onPress={() => {
+                setValue((state) => (state ?? 0) + 1);
+              }}
+            />
+
+            <View style={{ height: themeContext.padding.md }} />
+
+            <Button
+              title="-"
+              category="outline-primary"
+              size="xl"
+              onPress={() => {
+                setValue((state) => (state ?? 0) - 1);
+              }}
+            />
+          </View>
+        </View>
+      </View>
+
+      <View
+        style={{
+          padding: themeContext.padding.md,
+          width: 140,
+          justifyContent: 'center',
+        }}
+      >
+        <View style={{ height: BUTTONS_CONTAINER_HEIGHT }}>
+          <Button
+            title="Aceptar"
+            onPress={() => {
+              value != null && writeValue(value);
+            }}
+          />
+
+          <View style={{ height: themeContext.padding.md }} />
+
+          <Button
+            title="Cancelar"
+            category="outline-primary"
+            onPress={onClose}
+          />
+        </View>
+      </View>
+    </View>
+  );
+}
+
 export function DeviceDetailScreen({ route }) {
   const { deviceId } = route.params;
 
@@ -631,13 +722,15 @@ export function DeviceDetailScreen({ route }) {
     bleContext.connectedDeviceIds && bleContext.connectedDeviceIds[deviceId];
 
   const [changingVariable, setChangingVariable] = React.useState<
-    'pressure' | 'bpm' | 'ieRatio' | 'mode' | undefined
+    'pressure' | 'bpm' | 'ieRatio' | 'mode' | 'sens' | undefined
   >();
 
   const vm =
     connectedDevice?.volume == null || connectedDevice?.bpm == null
       ? undefined
       : (connectedDevice?.volume * connectedDevice?.bpm) / 1000;
+
+  const isModoACV = connectedDevice?.mode === 1;
 
   return (
     <>
@@ -684,6 +777,17 @@ export function DeviceDetailScreen({ route }) {
                 setChangingVariable((state) => undefined);
               }}
             />
+          ) : changingVariable === 'sens' ? (
+            <SensEdit
+              defaultValue={connectedDevice?.sens}
+              onClose={() => {
+                setChangingVariable((state) => undefined);
+              }}
+              writeValue={async (value) => {
+                await bleContext.writeSens!({ deviceId, value });
+                setChangingVariable((state) => undefined);
+              }}
+            />
           ) : changingVariable === 'bpm' ? (
             <BPMEdit
               defaultValue={connectedDevice?.bpm}
@@ -719,10 +823,10 @@ export function DeviceDetailScreen({ route }) {
           >
             <Button
               title={`Modo ${
-                connectedDevice?.presControl === 0
-                  ? 'ACV'
-                  : connectedDevice?.presControl === 1
+                connectedDevice?.mode === 0
                   ? 'PCV'
+                  : connectedDevice?.mode === 1
+                  ? 'ACV'
                   : '-'
               }`}
               onPress={() => {
@@ -733,6 +837,25 @@ export function DeviceDetailScreen({ route }) {
             />
 
             <View style={{ width: themeContext.sizes.sm }} />
+
+            {isModoACV && (
+              <>
+                <Button
+                  title={`Sensibilidad ${
+                    connectedDevice?.sens == null
+                      ? '-'
+                      : connectedDevice?.sens / 10
+                  }`}
+                  onPress={() => {
+                    setChangingVariable((state) =>
+                      state === 'sens' ? undefined : 'sens'
+                    );
+                  }}
+                />
+
+                <View style={{ width: themeContext.sizes.sm }} />
+              </>
+            )}
 
             <Button
               title={`P. Control ${connectedDevice?.presControl ?? '-'}`}

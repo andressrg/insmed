@@ -26,6 +26,7 @@ export const parseData = ({
   volume?: number;
   mode?: number;
   cycleCount?: number;
+  sens?: number;
 } => {
   const dataToParse = cacheRef.current + data;
   cacheRef.current = '';
@@ -45,6 +46,7 @@ export const parseData = ({
   let pip: number | undefined;
   let peep: number | undefined;
   let cycleCount: number | undefined;
+  let sens: number | undefined;
   let volume: number | undefined;
   let mode: number | undefined;
 
@@ -55,21 +57,27 @@ export const parseData = ({
     if (item.startsWith('sp')) {
       const itemNoS = item.replace('sp', '');
 
-      const parsed = parseInt(itemNoS);
+      const parsed = parseInt(itemNoS, 10);
 
       if (Number.isNaN(parsed) === false) presControl = parsed;
     } else if (item.startsWith('sb')) {
       const itemNoS = item.replace('sb', '');
 
-      const parsed = parseInt(itemNoS);
+      const parsed = parseInt(itemNoS, 10);
 
       if (Number.isNaN(parsed) === false) bpm = parsed;
     } else if (item.startsWith('si')) {
       const itemNoS = item.replace('si', '');
 
-      const parsed = parseInt(itemNoS);
+      const parsed = parseInt(itemNoS, 10);
 
       if (Number.isNaN(parsed) === false) ieRatio = parsed;
+    } else if (item.startsWith('sm')) {
+      const itemNoS = item.replace('sm', '');
+
+      const parsed = parseInt(itemNoS, 10);
+
+      if (Number.isNaN(parsed) === false) mode = parsed;
     } else {
       let parts: string[] = [];
       for (const char of item) {
@@ -100,11 +108,14 @@ export const parseData = ({
         } else if (part.startsWith('n')) {
           const parsed = parseFloat(part.replace('n', ''));
           if (Number.isNaN(parsed) === false) cycleCount = parsed;
+        } else if (part.startsWith('j')) {
+          const parsed = parseFloat(part.replace('j', ''));
+          if (Number.isNaN(parsed) === false) sens = parsed;
         } else if (part.startsWith('v')) {
           const parsed = parseFloat(part.replace('v', ''));
           if (Number.isNaN(parsed) === false) volume = parsed;
         } else if (part.startsWith('m')) {
-          const parsed = parseFloat(part.replace('m', ''));
+          const parsed = parseInt(part.replace('m', ''), 10);
           if (Number.isNaN(parsed) === false) mode = parsed;
         }
       }
@@ -145,5 +156,6 @@ export const parseData = ({
     volume,
     mode,
     cycleCount,
+    sens,
   };
 };

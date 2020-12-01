@@ -30,6 +30,8 @@ async function runQuery<T>(conn, query, args?): Promise<T[]> {
   return getRows(result.rows);
 }
 
+type ITruncateTables = () => Promise<void>;
+
 export const SQLiteContext = React.createContext<{
   getMeasurements?: (p: {
     deviceId;
@@ -89,6 +91,8 @@ export const SQLiteContext = React.createContext<{
     hardware_id: string;
     name: string;
   }) => Promise<{ id }>;
+
+  truncateTables?: ITruncateTables;
 }>({});
 
 async function setupDb(): Promise<{ db }> {
@@ -401,6 +405,13 @@ export function SQLiteContextProvider({
           },
           [dbPromise.promise, devicesAsync]
         ),
+
+        truncateTables: React.useCallback(async () => {
+          const { db } = await dbPromise.promise;
+
+          await db.executeSql(`DELETE FROM measurement`);
+          await db.executeSql(`DELETE FROM device`);
+        }, [dbPromise.promise]),
       }}
     >
       {children}

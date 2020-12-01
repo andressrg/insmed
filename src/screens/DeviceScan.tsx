@@ -1,14 +1,10 @@
 import React from 'react';
-import {
-  View,
-  ScrollView,
-  SafeAreaView,
-  ActivityIndicator,
-} from 'react-native';
+import { View, ScrollView, ActivityIndicator } from 'react-native';
 import { Device } from 'react-native-ble-plx';
 import { useNavigation } from '@react-navigation/native';
 import { Permissions } from 'react-native-unimodules';
 import { useAsync } from 'react-async';
+
 import { ThemeContext } from '../components/ThemeContext';
 import { BLEContext } from '../components/BLEContext';
 import { ListItem } from '../components/UI';

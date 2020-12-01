@@ -14,6 +14,7 @@ type writePresControlType = ({
 type writeBPMType = writePresControlType;
 type writeIERatioType = writePresControlType;
 type writeModeType = writePresControlType;
+type writeSensType = writePresControlType;
 
 export const BLEContext = React.createContext<{
   manager?: BleManager;
@@ -39,6 +40,7 @@ export const BLEContext = React.createContext<{
       peep?: number;
       volume?: number;
       cycleCount?: number;
+      sens?: number;
       mode: number | undefined;
     };
   };
@@ -47,6 +49,7 @@ export const BLEContext = React.createContext<{
   writeBPM?: writeBPMType;
   writeIERatio?: writeIERatioType;
   writeMode?: writeModeType;
+  writeSens?: writeSensType;
 }>({});
 
 class CharacteristicsErrorBoundary extends React.Component {
@@ -94,6 +97,7 @@ function CharacteristicConnection({
     volume?: number;
     cycleCount?: number;
     mode: number | undefined;
+    sens: number | undefined;
   }) => void;
   onDisconnect: (p: { deviceId }) => void;
 }) {
@@ -174,6 +178,7 @@ function CharacteristicConnection({
               parsed.peep != null ||
               parsed.volume != null ||
               parsed.mode != null ||
+              parsed.sens != null ||
               parsed.cycleCount != null
             ) {
               setParams({
@@ -187,18 +192,21 @@ function CharacteristicConnection({
                 peep: parsed.peep,
                 volume: parsed.volume,
                 cycleCount: parsed.cycleCount,
+                sens: parsed.sens,
                 mode: parsed.mode,
               });
             }
 
             const pressure = parsed.pressure;
 
+            const localTimestamp = Date.now();
+
             pressure &&
               pressure.length > 0 &&
               insertMeasurements(
                 pressure.map((d) => ({
                   device_id: deviceId,
-                  timestamp: Date.now(),
+                  timestamp: localTimestamp,
                   external_timestamp: d.t,
                   type: 'pressure',
                   value: d.p,
@@ -213,7 +221,7 @@ function CharacteristicConnection({
               insertMeasurements(
                 flow.map((d) => ({
                   device_id: deviceId,
-                  timestamp: Date.now(),
+                  timestamp: localTimestamp,
                   external_timestamp: d.t,
                   type: 'flow',
                   value: d.p,
@@ -260,6 +268,7 @@ export function BLEContextProvider({
 
   const context = React.useContext(SQLiteContext);
   const getOrCreateDevice = context.getOrCreateDevice!;
+  const truncateTables = context.truncateTables!;
 
   const [characteristics, setCharacteristics] = React.useState<
     {
@@ -275,6 +284,7 @@ export function BLEContextProvider({
       peep?: number;
       volume?: number;
       cycleCount?: number;
+      sens?: number;
       mode: number | undefined;
     }[]
   >([]);
@@ -296,6 +306,7 @@ export function BLEContextProvider({
             peep: d.peep,
             volume: d.volume,
             cycleCount: d.cycleCount,
+            sens: d.sens,
             mode: d.mode,
           },
         }),
@@ -312,6 +323,7 @@ export function BLEContextProvider({
             peep?: number;
             volume?: number;
             cycleCount?: number;
+            sens?: number;
             mode: number | undefined;
           };
         }
@@ -321,6 +333,8 @@ export function BLEContextProvider({
 
   const connectToCharacteristic = React.useCallback(
     async ({ characteristic, device }) => {
+      await truncateTables();
+
       const { id } = await getOrCreateDevice({
         hardware_id: device.id,
         name: device.name,
@@ -340,7 +354,7 @@ export function BLEContextProvider({
             ]
       );
     },
-    [getOrCreateDevice]
+    [getOrCreateDevice, truncateTables]
   );
 
   const setParams = React.useCallback(
@@ -353,6 +367,7 @@ export function BLEContextProvider({
       peep,
       volume,
       cycleCount,
+      sens,
       mode,
     }: {
       deviceId;
@@ -363,6 +378,7 @@ export function BLEContextProvider({
       peep?: number;
       volume?: number;
       cycleCount?: number;
+      sens?: number;
       mode?: number;
     }) => {
       setCharacteristics((state) =>
@@ -379,6 +395,7 @@ export function BLEContextProvider({
             if (volume != null) item.volume = volume;
             if (cycleCount != null) item.cycleCount = cycleCount;
             if (mode != null) item.mode = mode;
+            if (sens != null) item.sens = sens;
           }
         })
       );
@@ -462,6 +479,24 @@ export function BLEContextProvider({
     [characteristics, manager]
   );
 
+  const writeSens: writeSensType = React.useCallback(
+    async ({ deviceId, value }) => {
+      const val = characteristics.find((c) => c.deviceId === deviceId);
+
+      if (val == null) return;
+
+      const { deviceHardwareId, characteristic } = val;
+
+      await manager!.writeCharacteristicWithoutResponseForDevice!(
+        deviceHardwareId,
+        characteristic.serviceUUID,
+        characteristic.uuid,
+        encode(`j${value};`)
+      );
+    },
+    [characteristics, manager]
+  );
+
   return manager == null ? null : (
     <BLEContext.Provider
       value={{
@@ -473,6 +508,7 @@ export function BLEContextProvider({
         writeBPM,
         writeIERatio,
         writeMode,
+        writeSens,
       }}
     >
       {children}
