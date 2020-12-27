@@ -549,7 +549,7 @@ export function BLEContextProvider({
     [characteristics, manager]
   );
 
-  useDevCharacteristic();
+  // useDevCharacteristic();
 
   return manager == null ? null : (
     <BLEContext.Provider
