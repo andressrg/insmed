@@ -140,7 +140,10 @@ function Plot({
           const data = (
             await getMeasurements({
               deviceId,
-              cursor: cursorRef.current,
+
+              // This is creating an issue.
+              // the plot stops rendering...
+              // cursor: cursorRef.current,
               first: 2000,
               variableName,
             })
@@ -167,6 +170,11 @@ function Plot({
 
           cursorRef.current =
             result.background[0]?.id ?? result.foreground[0]?.id;
+
+          // if (variableName === 'pressure') {
+          //   console.log('cursorRef.current', cursorRef.current, result, data);
+          //   console.log('cursorRef.current-----------------', data);
+          // }
 
           return result;
         })()
