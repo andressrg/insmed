@@ -171,11 +171,6 @@ function Plot({
           cursorRef.current =
             result.background[0]?.id ?? result.foreground[0]?.id;
 
-          // if (variableName === 'pressure') {
-          //   console.log('cursorRef.current', cursorRef.current, result, data);
-          //   console.log('cursorRef.current-----------------', data);
-          // }
-
           return result;
         })()
       );
