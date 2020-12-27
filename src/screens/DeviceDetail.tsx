@@ -29,8 +29,7 @@ const WRAPAROUND_MILLIS = 0.5 * 60 * 1000;
 const PRESSURE_AXIS_MIN = -10;
 const PRESSURE_AXIS_MAX = 50;
 
-// const PLOT_REFRESH_DELAY = 200;
-const PLOT_REFRESH_DELAY = 2000;
+const PLOT_REFRESH_DELAY = 200;
 
 function Variable({
   title,
