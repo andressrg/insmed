@@ -140,7 +140,10 @@ function Plot({
           const data = (
             await getMeasurements({
               deviceId,
-              cursor: cursorRef.current,
+
+              // This is creating an issue.
+              // the plot stops rendering...
+              // cursor: cursorRef.current,
               first: 2000,
               variableName,
             })

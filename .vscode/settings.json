@@ -8,6 +8,7 @@
     "uart",
     "unimodules"
   ],
+  "cSpell.language": "en,es",
   "java.configuration.updateBuildConfiguration": "disabled",
   "typescript.tsdk": "node_modules/typescript/lib"
 }

@@ -253,6 +253,58 @@ function CharacteristicConnection({
   return null;
 }
 
+function useDevCharacteristic() {
+  const context = React.useContext(SQLiteContext);
+
+  const insertMeasurements = context.insertMeasurements;
+
+  const prevExternalTimestamp = React.useRef<number>();
+  const prevTimestamp = React.useRef<number>(Date.now());
+
+  React.useEffect(() => {
+    if (__DEV__ !== true || insertMeasurements == null) return;
+
+    const key = setInterval(() => {
+      const localTimestamp = Date.now();
+
+      prevExternalTimestamp.current =
+        prevExternalTimestamp.current ??
+        localTimestamp - (1 + Math.random()) * 500;
+
+      const external_timestamp =
+        prevExternalTimestamp.current +
+        (localTimestamp - prevTimestamp.current);
+
+      insertMeasurements([
+        {
+          device_id: 1,
+          timestamp: localTimestamp,
+          external_timestamp,
+          type: 'pressure',
+          value: Math.sin(localTimestamp / 100),
+          raw: '',
+        },
+      ]);
+
+      insertMeasurements([
+        {
+          device_id: 1,
+          timestamp: localTimestamp,
+          external_timestamp,
+          type: 'flow',
+          value: Math.sin(localTimestamp / 100),
+          raw: '',
+        },
+      ]);
+
+      prevTimestamp.current = localTimestamp;
+      prevExternalTimestamp.current = external_timestamp;
+    }, 1000);
+
+    return () => clearInterval(key);
+  }, [insertMeasurements]);
+}
+
 export function BLEContextProvider({
   children,
 }: {
@@ -496,6 +548,8 @@ export function BLEContextProvider({
     },
     [characteristics, manager]
   );
+
+  // useDevCharacteristic();
 
   return manager == null ? null : (
     <BLEContext.Provider
