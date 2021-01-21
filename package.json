@@ -19,7 +19,7 @@
     "expo": "~36.0.0",
     "expo-keep-awake": "^8.1.0",
     "expo-screen-orientation": "^1.0.0",
-    "immer": "^6.0.3",
+    "immer": "^8.0.1",
     "lodash.merge": "^4.6.2",
     "react": "~16.9.0",
     "react-async": "^10.0.1",
